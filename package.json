@@ -1,0 +1,23 @@
+{
+  "name": "miya-library",
+  "version": "1.0.0",
+  "description": "> 🌳  built with [elm-spa](https://elm-spa.dev)",
+  "main": "index.js",
+  "scripts": {
+    "watch:styles": "node .bin/watchcss.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "chokidar": "^3.5.1",
+    "concat": "^1.0.3",
+    "esbuild": "^0.11.19",
+    "glob": "^7.1.7",
+    "nodemon": "^2.0.7",
+    "prettier": "^2.2.1",
+    "sass": "^1.32.12",
+    "stylelint": "^13.13.1",
+    "stylelint-config-sass-guidelines": "^8.0.0"
+  }
+}
