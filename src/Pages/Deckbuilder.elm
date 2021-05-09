@@ -1,15 +1,21 @@
 module Pages.Deckbuilder exposing (Model, Msg, page)
 
+import API.Cards
 import Components.Header
+import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Http
 import Page
 import Request
 import Rules.Cards as Cards
+import Rules.Clans exposing (Clan(..), clanName)
 import Rules.Formats as Formats
 import Shared
 import String
+import UI.ClanFilterSelector
+import Url exposing (Protocol(..))
 import View exposing (View)
 
 
@@ -23,10 +29,6 @@ page shared req =
         }
 
 
-
--- INIT
-
-
 type alias Model =
     { format : Formats.Format
     , stronghold : Cards.StrongholdData
@@ -34,6 +36,8 @@ type alias Model =
     , provinces : List Cards.ProvinceData
     , deckCards : List ( Cards.Card, Int )
     , deckName : Maybe String
+    , allCardsData : Maybe (List API.Cards.Card)
+    , filterClan : UI.ClanFilterSelector.Model
     }
 
 
@@ -45,8 +49,10 @@ init =
       , provinces = Cards.sample.provinces
       , deckCards = Cards.sample.deckCards
       , deckName = Nothing
+      , allCardsData = Nothing
+      , filterClan = UI.ClanFilterSelector.init
       }
-    , Cmd.none
+    , API.Cards.fetchCards GotCards
     )
 
 
@@ -55,14 +61,23 @@ init =
 
 
 type Msg
-    = ReplaceMe
+    = GotCards (Result Http.Error (List API.Cards.Card))
+    | ClanFilterChanged UI.ClanFilterSelector.Model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        ClanFilterChanged clanFilters ->
+            ( { model | filterClan = clanFilters }, Cmd.none )
+
+        GotCards result ->
+            case result of
+                Ok allCardsData ->
+                    ( { model | allCardsData = Just allCardsData }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 
@@ -84,8 +99,42 @@ view model =
     , body =
         [ Components.Header.view
         , viewDeck model
+        , aside []
+            [ viewFilters model
+            , viewCardsOptions model
+            ]
         ]
     }
+
+
+viewFilters : Model -> Html Msg
+viewFilters model =
+    div [ class "filters" ]
+        [ p [] [ text "Filters" ]
+        , UI.ClanFilterSelector.view model.filterClan ClanFilterChanged
+        ]
+
+
+viewCardsOptions : Model -> Html Msg
+viewCardsOptions model =
+    case model.allCardsData of
+        Nothing ->
+            text "loading"
+
+        Just allCardsData ->
+            let
+                filteredCards =
+                    List.filter (isClanAllowed model.filterClan) allCardsData
+            in
+            div [ class "cards" ]
+                [ p [] [ text "Cards" ]
+                , ul [] (List.map viewCardRow filteredCards)
+                ]
+
+
+viewCardRow : API.Cards.Card -> Html Msg
+viewCardRow card =
+    li [] [ p [] [ text card.id, span [] (List.map (text << clanName) card.allowedClans) ] ]
 
 
 viewDeck : Model -> Html Msg
@@ -110,22 +159,22 @@ viewDeck model =
 viewDeckSide : List ( Cards.Card, Int ) -> List (Html Msg)
 viewDeckSide cards =
     let
-        line x card =
-            Just (li [] [ text (String.fromInt x), text card.title ])
+        line qty card =
+            Just (li [] [ text (String.fromInt qty), text card.title ])
 
-        viewCard ( card, x ) =
+        viewCard ( card, qty ) =
             case card of
-                Cards.Character _ character ->
-                    line x character
+                Cards.CardCharacter _ character ->
+                    line qty character
 
-                Cards.Event _ event ->
-                    line x event
+                Cards.CardEvent _ event ->
+                    line qty event
 
-                Cards.Holding _ holding ->
-                    line x holding
+                Cards.CardHolding _ holding ->
+                    line qty holding
 
-                Cards.Attachment _ attachment ->
-                    line x attachment
+                Cards.CardAttachment _ attachment ->
+                    line qty attachment
 
                 _ ->
                     Nothing
@@ -172,3 +221,13 @@ viewProvinces model =
             li [] [ text province.title ]
     in
     List.map viewProvince model.provinces
+
+
+isClanAllowed : EverySet.EverySet Rules.Clans.Clan -> API.Cards.Card -> Bool
+isClanAllowed filter card =
+    case card.clan of
+        Nothing ->
+            False
+
+        Just clan ->
+            UI.ClanFilterSelector.isClanAllowed filter clan

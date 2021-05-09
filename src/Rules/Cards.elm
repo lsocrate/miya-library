@@ -12,38 +12,48 @@ type CardBack
     | Conflict
 
 
+type CardType
+    = Character
+    | Holding
+    | Event
+    | Attachment
+    | Stronghold
+    | Role
+    | Province
+
+
 type Card
-    = Character CardBack CharacterData
-    | Holding CardBack HoldingData
-    | Event CardBack EventData
-    | Attachment CardBack AttachmentData
-    | Stronghold CardBack StrongholdData
-    | Role CardBack RoleData
-    | Province CardBack ProvinceData
+    = CardCharacter CardBack CharacterData
+    | CardHolding CardBack HoldingData
+    | CardEvent CardBack EventData
+    | CardAttachment CardBack AttachmentData
+    | CardStronghold CardBack StrongholdData
+    | CardRole CardBack RoleData
+    | CardProvince CardBack ProvinceData
 
 
 hasBack : CardBack -> Card -> Bool
 hasBack targetBackType card =
     case card of
-        Character cardBack _ ->
+        CardCharacter cardBack _ ->
             cardBack == targetBackType
 
-        Holding cardBack _ ->
+        CardHolding cardBack _ ->
             cardBack == targetBackType
 
-        Event cardBack _ ->
+        CardEvent cardBack _ ->
             cardBack == targetBackType
 
-        Attachment cardBack _ ->
+        CardAttachment cardBack _ ->
             cardBack == targetBackType
 
-        Stronghold cardBack _ ->
+        CardStronghold cardBack _ ->
             cardBack == targetBackType
 
-        Role cardBack _ ->
+        CardRole cardBack _ ->
             cardBack == targetBackType
 
-        Province cardBack _ ->
+        CardProvince cardBack _ ->
             cardBack == targetBackType
 
 
@@ -217,7 +227,7 @@ sample =
             "Jane the painter"
         ]
     , deckCards =
-        [ ( Character Dynasty
+        [ ( CardCharacter Dynasty
                 (CharacterData "Merchant of Curiosities"
                     NonUnique
                     Rules.Clans.Unicorn
@@ -237,7 +247,7 @@ sample =
                 )
           , 3
           )
-        , ( Holding Dynasty
+        , ( CardHolding Dynasty
                 (HoldingData "Reserve Tents"
                     NonUnique
                     Rules.Clans.Unicorn
@@ -253,7 +263,7 @@ sample =
                 )
           , 2
           )
-        , ( Event Dynasty
+        , ( CardEvent Dynasty
                 (EventData "Ride at Dawn"
                     Rules.Clans.Unicorn
                     Dynasty
@@ -269,7 +279,7 @@ sample =
                 )
           , 1
           )
-        , ( Attachment Conflict
+        , ( CardAttachment Conflict
                 (AttachmentData "Curved Blade"
                     NonUnique
                     Rules.Clans.Unicorn
@@ -288,7 +298,7 @@ sample =
                 )
           , 3
           )
-        , ( Character Conflict
+        , ( CardCharacter Conflict
                 (CharacterData "Merchant of Curiosities"
                     Unique
                     Rules.Clans.Unicorn
@@ -308,20 +318,20 @@ sample =
                 )
           , 2
           )
-        , ( Event Conflict
-                (EventData "Voice of Honor"
-                    Rules.Clans.Crane
-                    Conflict
-                    []
-                    (Just 0)
-                    [ "Cancel" ]
-                    (Just 2)
-                    Nothing
-                    Nothing
-                    "Cycle B"
-                    12
-                    "Bob"
-                )
+        , ( CardEvent Conflict
+                { title = "Voice of Honor"
+                , clan = Rules.Clans.Crane
+                , deck = Conflict
+                , traits = []
+                , cost = Just 0
+                , abilities = [ "Cancel" ]
+                , influenceCost = Just 2
+                , roleRequirement = Nothing
+                , formatRequirement = Nothing
+                , cycle = "Cycle B"
+                , cardNumber = 12
+                , artist = "Bob"
+                }
           , 1
           )
         ]
