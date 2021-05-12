@@ -1,16 +1,16 @@
-module API.Cards exposing (Card, fetchCards)
+module API.Cards exposing (fetchCards)
 
+import Cards
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, map2, maybe, string)
+import Json.Decode as Decode exposing (Decoder, andThen, bool, field, index, int, list, map, map2, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
-import Rules.Cards
-import Rules.Clans
-import Rules.Elements
+import List
+import Maybe
 import String
 import Tuple
 
 
-fetchCards : (Result Http.Error (List Card) -> msg) -> Cmd msg
+fetchCards : (Result Http.Error (List PreCard) -> msg) -> Cmd msg
 fetchCards msg =
     Http.get
         { url = "https://api.fiveringsdb.com/cards"
@@ -18,13 +18,13 @@ fetchCards msg =
         }
 
 
-type alias Card =
-    { allowedClans : List Rules.Clans.Clan
-    , cardType : Maybe Rules.Cards.CardType
-    , clan : Maybe Rules.Clans.Clan
+type alias PreCard =
+    { allowedClans : List Cards.Clan
+    , cardType : String
+    , clan : Maybe Cards.Clan
     , cost : Maybe Int
     , deckLimit : Int
-    , element : List Rules.Elements.Element
+    , element : List Cards.Element
     , glory : Maybe Int
     , id : String
     , illustrator : String
@@ -53,16 +53,16 @@ type alias Card =
     }
 
 
-cardsDecoder : Decoder (List Card)
+cardsDecoder : Decoder (List PreCard)
 cardsDecoder =
     field "records" (list card)
 
 
-card : Decoder Card
+card : Decoder PreCard
 card =
-    Decode.succeed Card
+    Decode.succeed PreCard
         |> required "allowed_clans" (mapList toClan)
-        |> required "type" (map toCardType string)
+        |> required "type" string
         |> required "clan" (map toClan string)
         |> optional "cost" toInt Nothing
         |> required "deck_limit" int
@@ -94,6 +94,102 @@ card =
         |> required "unicity" bool
 
 
+
+-- |> optional "honor" int
+-- |> optional "influence_pool" int
+-- |> optional "fate" int
+
+
+toFormatRequirement =
+    Nothing
+
+
+toRoleTraits : List String -> List Cards.RoleTypes
+toRoleTraits =
+    let
+        nameToType string =
+            case string of
+                "keeper" ->
+                    Just Cards.KeeperRole
+
+                "seeker" ->
+                    Just Cards.SeekerRole
+
+                "air" ->
+                    Just Cards.AirRole
+
+                "earth" ->
+                    Just Cards.EarthRole
+
+                "fire" ->
+                    Just Cards.FireRole
+
+                "void" ->
+                    Just Cards.VoidRole
+
+                "water" ->
+                    Just Cards.WaterRole
+
+                _ ->
+                    Nothing
+    in
+    List.filterMap nameToType
+
+
+
+-- magic : List Cards.Clan -> String -> Maybe Cards.Clan -> Maybe Int -> Int -> List Cards.Element -> Maybe Int -> String -> String -> String -> Maybe Int -> Bool -> Bool -> Bool -> Bool -> Bool -> Maybe Int -> Maybe Int -> String -> String -> ( String, Maybe Int ) -> Maybe Int -> Maybe Int -> Maybe String -> String -> Maybe Int -> Maybe Int -> Maybe String -> Maybe String -> List String -> Bool -> Maybe Int -> Maybe Int -> Maybe Int -> Maybe Cards.Card
+-- magic allowedClans cardType clan cost deckLimit element glory id illustrator imageUrl influenceCost isBanned isBannedInJade isBannedInSkirmish isRestricted isRestrictedInJade military militaryBonus name nameCanonical pack political politicalBonus roleRestriction side strength strengthBonus text textCanonical traits unicity startingHonor influencePool fate =
+--     case ( side, cardType ) of
+--         ( "role", "role" ) ->
+--             Just <|
+--                 Cards.RoleCard <|
+--                     { title = name
+--                     , traits = toRoleTraits traits
+--                     , abilities = Maybe.map List.singleton textCanonical |> Maybe.withDefault []
+--                     , formatRequirement = toFormatRequirement
+--                     , cycle = Tuple.first pack
+--                     , cardNumber = Tuple.second pack |> Maybe.withDefault 0
+--                     , artist = illustrator
+--                     }
+--         ( "province", "stronghold" ) ->
+--             let
+--                 asd a b c d e =
+--                     1
+--             in
+--             Maybe.map5 asd clan strength startingHonor influencePool
+--         --     Cards.StrongholdCard
+--         -- <|
+--         --     { title = name
+--         --     , clan = Clan
+--         --     , traits = traits
+--         --     , strength = Int
+--         --     , startingHonor = Int
+--         --     , fateValue = Int
+--         --     , influenceValue = Int
+--         --     , abilities = List String
+--         --     , formatRequirement = Maybe Format
+--         --     , cycle = String
+--         --     , cardNumber = Int
+--         --     , artist = String
+--         --     }
+--         ( "province", "province" ) ->
+--             Nothing
+--         ( "dynasty", "character" ) ->
+--             Nothing
+--         ( "dynasty", "event" ) ->
+--             Nothing
+--         ( "dynasty", "holding" ) ->
+--             Nothing
+--         ( "conflict", "event" ) ->
+--             Nothing
+--         ( "conflict", "character" ) ->
+--             Nothing
+--         ( "conflict", "attachment" ) ->
+--             Nothing
+--         ( _, _ ) ->
+--             Nothing
+
+
 toInt : Decoder (Maybe Int)
 toInt =
     map String.toInt string
@@ -104,79 +200,51 @@ mapList to =
     map (List.filterMap to) (list string)
 
 
-toClan : String -> Maybe Rules.Clans.Clan
+toClan : String -> Maybe Cards.Clan
 toClan str =
     case str of
         "crab" ->
-            Just Rules.Clans.Crab
+            Just Cards.Crab
 
         "crane" ->
-            Just Rules.Clans.Crane
+            Just Cards.Crane
 
         "dragon" ->
-            Just Rules.Clans.Dragon
+            Just Cards.Dragon
 
         "lion" ->
-            Just Rules.Clans.Lion
+            Just Cards.Lion
 
         "phoenix" ->
-            Just Rules.Clans.Phoenix
+            Just Cards.Phoenix
 
         "scorpion" ->
-            Just Rules.Clans.Scorpion
+            Just Cards.Scorpion
 
         "unicorn" ->
-            Just Rules.Clans.Unicorn
+            Just Cards.Unicorn
 
         _ ->
             Nothing
 
 
-toElement : String -> Maybe Rules.Elements.Element
+toElement : String -> Maybe Cards.Element
 toElement str =
     case str of
         "air" ->
-            Just Rules.Elements.Air
+            Just Cards.Air
 
         "earth" ->
-            Just Rules.Elements.Earth
+            Just Cards.Earth
 
         "fire" ->
-            Just Rules.Elements.Fire
+            Just Cards.Fire
 
         "void" ->
-            Just Rules.Elements.Void
+            Just Cards.Void
 
         "water" ->
-            Just Rules.Elements.Water
-
-        _ ->
-            Nothing
-
-
-toCardType : String -> Maybe Rules.Cards.CardType
-toCardType str =
-    case str of
-        "province" ->
-            Just Rules.Cards.Province
-
-        "attachment" ->
-            Just Rules.Cards.Attachment
-
-        "character" ->
-            Just Rules.Cards.Character
-
-        "holding" ->
-            Just Rules.Cards.Holding
-
-        "event" ->
-            Just Rules.Cards.Event
-
-        "role" ->
-            Just Rules.Cards.Role
-
-        "stronghold" ->
-            Just Rules.Cards.Stronghold
+            Just Cards.Water
 
         _ ->
             Nothing
