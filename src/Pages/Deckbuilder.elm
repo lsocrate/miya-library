@@ -1,15 +1,16 @@
 module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import API.Cards
+import Cards as Cards
 import Components.Header
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http
 import Page
 import Request
-import Rules.Cards as Cards
 import Rules.Clans exposing (Clan(..), clanName)
 import Rules.Formats as Formats
 import Shared
@@ -29,31 +30,34 @@ page shared req =
         }
 
 
-type alias Model =
-    { format : Formats.Format
-    , stronghold : Cards.StrongholdData
-    , role : Maybe Cards.RoleData
-    , provinces : List Cards.ProvinceData
-    , deckCards : List ( Cards.Card, Int )
-    , deckName : Maybe String
-    , allCardsData : Maybe (List API.Cards.Card)
-    , filterClan : UI.ClanFilterSelector.Model
+type alias CardsData =
+    List API.Cards.Card
+
+
+type alias Deck =
+    { stronghold : Cards.StrongholdData
+
+    -- , format : Formats.Format
+    -- , role : Maybe Cards.RoleData
+    -- , provinces : List Cards.ProvinceData
+    -- , deckCards : List ( Cards.Card, Int )
+    -- , deckName : Maybe String
     }
+
+
+type alias Filters =
+    { byClan : UI.ClanFilterSelector.Model }
+
+
+type Model
+    = Loading
+    | ChoosingStronghold CardsData
+    | Deckbuilding CardsData Filters Deck
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { format = Cards.sample.format
-      , stronghold = Cards.sample.stronghold
-      , role = Just Cards.sample.role
-      , provinces = Cards.sample.provinces
-      , deckCards = Cards.sample.deckCards
-      , deckName = Nothing
-      , allCardsData = Nothing
-      , filterClan = UI.ClanFilterSelector.init
-      }
-    , API.Cards.fetchCards GotCards
-    )
+    ( Loading, API.Cards.fetchCards FetchedCards )
 
 
 
@@ -61,23 +65,29 @@ init =
 
 
 type Msg
-    = GotCards (Result Http.Error (List API.Cards.Card))
+    = FetchedCards (Result Http.Error (List API.Cards.Card))
+    | StrongholdChosen API.Cards.Card
     | ClanFilterChanged UI.ClanFilterSelector.Model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        ClanFilterChanged clanFilters ->
-            ( { model | filterClan = clanFilters }, Cmd.none )
-
-        GotCards result ->
+    case ( model, msg ) of
+        ( Loading, FetchedCards result ) ->
             case result of
                 Ok allCardsData ->
-                    ( { model | allCardsData = Just allCardsData }, Cmd.none )
+                    ( ChoosingStronghold allCardsData, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
+
+        ( ChoosingStronghold allCards, StrongholdChosen sh ) ->
+            ( Deckbuilding allCards { byClan = UI.ClanFilterSelector.init } { stronghold = sh }, Cmd.none )
+
+        -- ClanFilterChanged clanFilters ->
+        --     ( { model | filterClan = clanFilters }, Cmd.none )
+        ( _, _ ) ->
+            ( model, Cmd.none )
 
 
 
@@ -95,16 +105,59 @@ subscriptions model =
 
 view : Model -> View Msg
 view model =
+    let
+        viewForStep =
+            case model of
+                Loading ->
+                    viewLoading
+
+                ChoosingStronghold allCards ->
+                    viewStrongholdSelector <| List.filter isStronghold allCards
+    in
     { title = "Deckbuilder"
     , body =
         [ Components.Header.view
-        , viewDeck model
+        , viewForStep
+        ]
+    }
+
+
+isStronghold : API.Cards.Card -> Bool
+isStronghold card =
+    case card.cardType of
+        Just cardType ->
+            cardType == Cards.Stronghold
+
+        _ ->
+            False
+
+
+viewLoading : Html Msg
+viewLoading =
+    div [] [ text "Loading" ]
+
+
+viewStrongholdSelector : CardsData -> Html Msg
+viewStrongholdSelector strongholds =
+    let
+        viewStrongholdOption sh =
+            li [] [ div [ onClick (StrongholdChosen sh) ] [ text sh.name ] ]
+    in
+    div []
+        [ h2 [] [ text "Choose a stronghold" ]
+        , ul [] (List.map viewStrongholdOption strongholds)
+        ]
+
+
+viewDeckbuild : Model -> Html Msg
+viewDeckbuild model =
+    div []
+        [ viewDeck model
         , aside []
             [ viewFilters model
             , viewCardsOptions model
             ]
         ]
-    }
 
 
 viewFilters : Model -> Html Msg

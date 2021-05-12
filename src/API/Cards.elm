@@ -2,15 +2,13 @@ module API.Cards exposing (fetchCards)
 
 import Cards
 import Http
-import Json.Decode as Decode exposing (Decoder, andThen, bool, field, index, int, list, map, map2, maybe, string)
+import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import List
-import Maybe
 import String
-import Tuple
 
 
-fetchCards : (Result Http.Error (List PreCard) -> msg) -> Cmd msg
+fetchCards : (Result Http.Error (List Cards.Card) -> msg) -> Cmd msg
 fetchCards msg =
     Http.get
         { url = "https://api.fiveringsdb.com/cards"
@@ -18,96 +16,285 @@ fetchCards msg =
         }
 
 
-type alias PreCard =
-    { allowedClans : List Cards.Clan
-    , cardType : String
-    , clan : Maybe Cards.Clan
-    , cost : Maybe Int
-    , deckLimit : Int
-    , element : List Cards.Element
-    , glory : Maybe Int
-    , id : String
-    , illustrator : String
-    , imageUrl : String
-    , influenceCost : Maybe Int
-    , isBanned : Bool
-    , isBannedInJade : Bool
-    , isBannedInSkirmish : Bool
-    , isRestricted : Bool
-    , isRestrictedInJade : Bool
-    , military : Maybe Int
-    , militaryBonus : Maybe Int
-    , name : String
-    , nameCanonical : String
-    , pack : ( String, Maybe Int )
-    , political : Maybe Int
-    , politicalBonus : Maybe Int
-    , roleRestriction : Maybe String
-    , side : String
-    , strength : Maybe Int
-    , strengthBonus : Maybe Int
-    , text : Maybe String
-    , textCanonical : Maybe String
-    , traits : List String
-    , unicity : Bool
-    }
-
-
-cardsDecoder : Decoder (List PreCard)
+cardsDecoder : Decoder (List Cards.Card)
 cardsDecoder =
     field "records" (list card)
 
 
-card : Decoder PreCard
+card : Decoder Cards.Card
 card =
-    Decode.succeed PreCard
-        |> required "allowed_clans" (mapList toClan)
+    Decode.succeed decoderForCardType
         |> required "type" string
-        |> required "clan" (map toClan string)
-        |> optional "cost" toInt Nothing
-        |> required "deck_limit" int
-        |> required "element" (mapList toElement)
-        |> optional "glory" (maybe int) Nothing
-        |> required "id" string
-        |> required "pack_cards" (index 0 (field "illustrator" string))
-        |> required "pack_cards" (index 0 (field "image_url" string))
-        |> optional "influence_cost" (maybe int) Nothing
-        |> required "is_banned" bool
-        |> required "is_banned_in_jade" bool
-        |> required "is_banned_in_skirmish" bool
-        |> required "is_restricted" bool
-        |> required "is_restricted_in_jade" bool
-        |> optional "military" toInt Nothing
-        |> optional "military_bonus" toInt Nothing
-        |> required "name" string
-        |> required "name_canonical" string
-        |> required "pack_cards" (index 0 (map2 Tuple.pair (field "pack" (field "id" string)) (field "position" toInt)))
-        |> optional "political" toInt Nothing
-        |> optional "political_bonus" toInt Nothing
-        |> optional "role_restrictions" (maybe string) Nothing
         |> required "side" string
-        |> optional "strength" toInt Nothing
-        |> optional "strength_bonus" toInt Nothing
-        |> optional "text" (maybe string) Nothing
-        |> optional "text_canonical" (maybe string) Nothing
-        |> required "traits" (list string)
-        |> required "unicity" bool
+        |> Decode.andThen identity
 
 
+decoderForCardType : String -> String -> Decoder Cards.Card
+decoderForCardType cardType_ cardBack =
+    case ( cardType_, cardBack ) of
+        ( "role", "role" ) ->
+            roleDecoder
 
--- |> optional "honor" int
--- |> optional "influence_pool" int
--- |> optional "fate" int
+        ( "province", "stronghold" ) ->
+            strongholdDecoder
+
+        ( "province", "province" ) ->
+            provinceDecoder
+
+        -- ( "dynasty", "character" ) ->
+        --     Just Cards.RoleCard
+        -- ( "dynasty", "event" ) ->
+        --     Just Cards.RoleCard
+        -- ( "dynasty", "holding" ) ->
+        --     Just Cards.RoleCard
+        -- ( "conflict", "event" ) ->
+        --     Just Cards.RoleCard
+        -- ( "conflict", "character" ) ->
+        --     Just Cards.RoleCard
+        -- ( "conflict", "attachment" ) ->
+        --     Just Cards.RoleCard
+        ( _, _ ) ->
+            roleDecoder
 
 
-toFormatRequirement =
-    Nothing
+roleDecoder : Decoder Cards.Card
+roleDecoder =
+    Decode.succeed Cards.RoleProperties
+        |> title
+        |> roleTraits
+        |> abilities
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.RoleCard
 
 
-toRoleTraits : List String -> List Cards.RoleTypes
-toRoleTraits =
+strongholdDecoder : Decoder Cards.Card
+strongholdDecoder =
+    Decode.succeed Cards.StrongholdProperties
+        |> title
+        |> clan
+        |> traits
+        |> bonusStrength
+        |> startingHonor
+        |> fateValue
+        |> influenceValue
+        |> abilities
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.StrongholdCard
+
+
+provinceDecoder : Decoder Cards.Card
+provinceDecoder =
+    Decode.succeed Cards.ProvinceProperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> strength
+        |> elements
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.ProvinceCard
+
+
+roleRequirement : Decoder (Maybe Cards.RoleTypes -> b) -> Decoder b
+roleRequirement =
     let
-        nameToType string =
+        toRoleRequirement =
+            string
+                |> Decode.andThen
+                    (\str ->
+                        case str of
+                            "keeper" ->
+                                Decode.succeed (Just Cards.KeeperRole)
+
+                            "seeker" ->
+                                Decode.succeed (Just Cards.SeekerRole)
+
+                            "air" ->
+                                Decode.succeed (Just Cards.AirRole)
+
+                            "earth" ->
+                                Decode.succeed (Just Cards.EarthRole)
+
+                            "fire" ->
+                                Decode.succeed (Just Cards.FireRole)
+
+                            "void" ->
+                                Decode.succeed (Just Cards.VoidRole)
+
+                            "water" ->
+                                Decode.succeed (Just Cards.WaterRole)
+
+                            _ ->
+                                Decode.fail "Invalid role restriction"
+                    )
+    in
+    optional "role_restriction" toRoleRequirement Nothing
+
+
+elements : Decoder (List Cards.Element -> b) -> Decoder b
+elements =
+    let
+        element =
+            string
+                |> Decode.andThen
+                    (\str ->
+                        case str of
+                            "air" ->
+                                Decode.succeed Cards.Air
+
+                            "earth" ->
+                                Decode.succeed Cards.Earth
+
+                            "fire" ->
+                                Decode.succeed Cards.Fire
+
+                            "void" ->
+                                Decode.succeed Cards.Void
+
+                            "water" ->
+                                Decode.succeed Cards.Water
+
+                            _ ->
+                                Decode.fail "Invalid element"
+                    )
+    in
+    required "element" <| list element
+
+
+influenceValue : Decoder (Int -> b) -> Decoder b
+influenceValue =
+    required "influence_pool" int
+
+
+fateValue : Decoder (Int -> b) -> Decoder b
+fateValue =
+    required "fate" int
+
+
+startingHonor : Decoder (Int -> b) -> Decoder b
+startingHonor =
+    required "honor" int
+
+
+bonusStrength : Decoder (Int -> b) -> Decoder b
+bonusStrength =
+    required "strength_bonus" modifier
+
+
+strength : Decoder (Int -> b) -> Decoder b
+strength =
+    required "strength" modifier
+
+
+traits : Decoder (List String -> b) -> Decoder b
+traits =
+    required "traits" <| list string
+
+
+title : Decoder (String -> b) -> Decoder b
+title =
+    required "name" string
+
+
+abilities : Decoder (List String -> b) -> Decoder b
+abilities =
+    required "text_canonical" <| map (String.split "\n") string
+
+
+formatRequirement : Decoder (Maybe Cards.Format -> b) -> Decoder b
+formatRequirement =
+    required "text_canonical" <| map (always Nothing) string
+
+
+uniqueness : Decoder (Cards.Uniqueness -> b) -> Decoder b
+uniqueness =
+    let
+        toUnique isUnique =
+            if isUnique then
+                Cards.Unique
+
+            else
+                Cards.NonUnique
+    in
+    required "unicity" <| map toUnique bool
+
+
+cycle : Decoder (String -> b) -> Decoder b
+cycle =
+    required "pack_cards" <| index 0 (field "pack" (field "id" string))
+
+
+cardNumber : Decoder (Int -> b) -> Decoder b
+cardNumber =
+    required "pack_cards" <| index 0 (field "position" modifier)
+
+
+artist : Decoder (String -> b) -> Decoder b
+artist =
+    required "pack_cards" <| index 0 (field "illustrator" string)
+
+
+modifier : Decoder Int
+modifier =
+    let
+        decodeModifier str =
+            case String.toInt str of
+                Just n ->
+                    Decode.succeed n
+
+                Nothing ->
+                    Decode.fail "Invalid modifier"
+    in
+    string |> Decode.andThen decodeModifier
+
+
+clan : Decoder (Cards.Clan -> b) -> Decoder b
+clan =
+    let
+        decodeClan str =
+            case str of
+                "crab" ->
+                    Decode.succeed Cards.Crab
+
+                "crane" ->
+                    Decode.succeed Cards.Crane
+
+                "dragon" ->
+                    Decode.succeed Cards.Dragon
+
+                "lion" ->
+                    Decode.succeed Cards.Lion
+
+                "phoenix" ->
+                    Decode.succeed Cards.Phoenix
+
+                "scorpion" ->
+                    Decode.succeed Cards.Scorpion
+
+                "unicorn" ->
+                    Decode.succeed Cards.Unicorn
+
+                _ ->
+                    Decode.fail "Invalid clan"
+    in
+    required "clan" <| (string |> Decode.andThen decodeClan)
+
+
+roleTraits : Decoder (List Cards.RoleTypes -> b) -> Decoder b
+roleTraits =
+    let
+        toRoleTrait string =
             case string of
                 "keeper" ->
                     Just Cards.KeeperRole
@@ -133,118 +320,4 @@ toRoleTraits =
                 _ ->
                     Nothing
     in
-    List.filterMap nameToType
-
-
-
--- magic : List Cards.Clan -> String -> Maybe Cards.Clan -> Maybe Int -> Int -> List Cards.Element -> Maybe Int -> String -> String -> String -> Maybe Int -> Bool -> Bool -> Bool -> Bool -> Bool -> Maybe Int -> Maybe Int -> String -> String -> ( String, Maybe Int ) -> Maybe Int -> Maybe Int -> Maybe String -> String -> Maybe Int -> Maybe Int -> Maybe String -> Maybe String -> List String -> Bool -> Maybe Int -> Maybe Int -> Maybe Int -> Maybe Cards.Card
--- magic allowedClans cardType clan cost deckLimit element glory id illustrator imageUrl influenceCost isBanned isBannedInJade isBannedInSkirmish isRestricted isRestrictedInJade military militaryBonus name nameCanonical pack political politicalBonus roleRestriction side strength strengthBonus text textCanonical traits unicity startingHonor influencePool fate =
---     case ( side, cardType ) of
---         ( "role", "role" ) ->
---             Just <|
---                 Cards.RoleCard <|
---                     { title = name
---                     , traits = toRoleTraits traits
---                     , abilities = Maybe.map List.singleton textCanonical |> Maybe.withDefault []
---                     , formatRequirement = toFormatRequirement
---                     , cycle = Tuple.first pack
---                     , cardNumber = Tuple.second pack |> Maybe.withDefault 0
---                     , artist = illustrator
---                     }
---         ( "province", "stronghold" ) ->
---             let
---                 asd a b c d e =
---                     1
---             in
---             Maybe.map5 asd clan strength startingHonor influencePool
---         --     Cards.StrongholdCard
---         -- <|
---         --     { title = name
---         --     , clan = Clan
---         --     , traits = traits
---         --     , strength = Int
---         --     , startingHonor = Int
---         --     , fateValue = Int
---         --     , influenceValue = Int
---         --     , abilities = List String
---         --     , formatRequirement = Maybe Format
---         --     , cycle = String
---         --     , cardNumber = Int
---         --     , artist = String
---         --     }
---         ( "province", "province" ) ->
---             Nothing
---         ( "dynasty", "character" ) ->
---             Nothing
---         ( "dynasty", "event" ) ->
---             Nothing
---         ( "dynasty", "holding" ) ->
---             Nothing
---         ( "conflict", "event" ) ->
---             Nothing
---         ( "conflict", "character" ) ->
---             Nothing
---         ( "conflict", "attachment" ) ->
---             Nothing
---         ( _, _ ) ->
---             Nothing
-
-
-toInt : Decoder (Maybe Int)
-toInt =
-    map String.toInt string
-
-
-mapList : (String -> Maybe to) -> Decoder (List to)
-mapList to =
-    map (List.filterMap to) (list string)
-
-
-toClan : String -> Maybe Cards.Clan
-toClan str =
-    case str of
-        "crab" ->
-            Just Cards.Crab
-
-        "crane" ->
-            Just Cards.Crane
-
-        "dragon" ->
-            Just Cards.Dragon
-
-        "lion" ->
-            Just Cards.Lion
-
-        "phoenix" ->
-            Just Cards.Phoenix
-
-        "scorpion" ->
-            Just Cards.Scorpion
-
-        "unicorn" ->
-            Just Cards.Unicorn
-
-        _ ->
-            Nothing
-
-
-toElement : String -> Maybe Cards.Element
-toElement str =
-    case str of
-        "air" ->
-            Just Cards.Air
-
-        "earth" ->
-            Just Cards.Earth
-
-        "fire" ->
-            Just Cards.Fire
-
-        "void" ->
-            Just Cards.Void
-
-        "water" ->
-            Just Cards.Water
-
-        _ ->
-            Nothing
+    required "traits" <| map (List.filterMap toRoleTrait) (list string)
