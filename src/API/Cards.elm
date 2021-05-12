@@ -2,7 +2,7 @@ module API.Cards exposing (fetchCards)
 
 import Cards
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, string)
+import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import List
 import String
@@ -18,43 +18,169 @@ fetchCards msg =
 
 cardsDecoder : Decoder (List Cards.Card)
 cardsDecoder =
-    field "records" (list card)
+    field "records" (list card) |> map (List.filterMap identity)
 
 
-card : Decoder Cards.Card
+card : Decoder (Maybe Cards.Card)
 card =
+    let
+        decodeCard decoder =
+            case decoder of
+                Just cardDecoder ->
+                    map Just cardDecoder
+
+                Nothing ->
+                    Decode.succeed Nothing
+    in
     Decode.succeed decoderForCardType
         |> required "type" string
         |> required "side" string
-        |> Decode.andThen identity
+        |> Decode.andThen decodeCard
 
 
-decoderForCardType : String -> String -> Decoder Cards.Card
+decoderForCardType : String -> String -> Maybe (Decoder Cards.Card)
 decoderForCardType cardType_ cardBack =
     case ( cardType_, cardBack ) of
         ( "role", "role" ) ->
-            roleDecoder
+            Just roleDecoder
 
         ( "province", "stronghold" ) ->
-            strongholdDecoder
+            Just strongholdDecoder
 
         ( "province", "province" ) ->
-            provinceDecoder
+            Just provinceDecoder
 
-        -- ( "dynasty", "character" ) ->
-        --     Just Cards.RoleCard
-        -- ( "dynasty", "event" ) ->
-        --     Just Cards.RoleCard
-        -- ( "dynasty", "holding" ) ->
-        --     Just Cards.RoleCard
-        -- ( "conflict", "event" ) ->
-        --     Just Cards.RoleCard
-        -- ( "conflict", "character" ) ->
-        --     Just Cards.RoleCard
-        -- ( "conflict", "attachment" ) ->
-        --     Just Cards.RoleCard
+        ( "dynasty", "event" ) ->
+            Just dynastyEventDecoder
+
+        ( "conflict", "event" ) ->
+            Just conflictEventDecoder
+
+        ( "dynasty", "holding" ) ->
+            Just holdingDecoder
+
+        ( "conflict", "attachment" ) ->
+            Just attachmentDecoder
+
+        ( "dynasty", "character" ) ->
+            Just dynastyCharacterDecoder
+
+        ( "conflict", "character" ) ->
+            Just conflictharacterDecoder
+
         ( _, _ ) ->
-            roleDecoder
+            Nothing
+
+
+holdingDecoder : Decoder Cards.Card
+holdingDecoder =
+    Decode.succeed Cards.DynastyHoldingPropperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> bonusStrength
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.DynastyHolding
+
+
+conflictharacterDecoder : Decoder Cards.Card
+conflictharacterDecoder =
+    Decode.succeed Cards.ConflictCharacterPropperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> cost
+        |> skill Military
+        |> skill Political
+        |> glory
+        |> abilities
+        |> influenceCost
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.ConflictCharacter
+
+
+dynastyCharacterDecoder : Decoder Cards.Card
+dynastyCharacterDecoder =
+    Decode.succeed Cards.DynastyCharacterProperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> cost
+        |> skill Military
+        |> skill Political
+        |> glory
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.DynastyCharacter
+
+
+attachmentDecoder : Decoder Cards.Card
+attachmentDecoder =
+    Decode.succeed Cards.ConflictAttachmentProperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> cost
+        |> skillBonus Military
+        |> skillBonus Political
+        |> abilities
+        |> influenceCost
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.ConflictAttachment
+
+
+conflictEventDecoder : Decoder Cards.Card
+conflictEventDecoder =
+    Decode.succeed Cards.ConflictEventProperties
+        |> title
+        |> clan
+        |> traits
+        |> cost
+        |> abilities
+        |> influenceCost
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.ConflictEvent
+
+
+dynastyEventDecoder : Decoder Cards.Card
+dynastyEventDecoder =
+    Decode.succeed Cards.DynastyEventProperties
+        |> title
+        |> clan
+        |> traits
+        |> cost
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map Cards.DynastyEvent
 
 
 roleDecoder : Decoder Cards.Card
@@ -104,6 +230,90 @@ provinceDecoder =
         |> cardNumber
         |> artist
         |> map Cards.ProvinceCard
+
+
+glory : Decoder (Int -> b) -> Decoder b
+glory =
+    required "glory" int
+
+
+type SkillType
+    = Military
+    | Political
+
+
+skill : SkillType -> Decoder (Cards.NumericalValue -> b) -> Decoder b
+skill skillType =
+    let
+        fieldName =
+            case skillType of
+                Military ->
+                    "military"
+
+                Political ->
+                    "political"
+
+        toSkill str =
+            if str == "x" then
+                Decode.succeed Cards.XValue
+
+            else
+                case String.toInt str of
+                    Just n ->
+                        Decode.succeed (Cards.FixedValue n)
+
+                    Nothing ->
+                        Decode.fail "Invalid skill value"
+    in
+    required fieldName (string |> Decode.andThen toSkill)
+
+
+skillBonus : SkillType -> Decoder (Cards.NumericalModifier -> b) -> Decoder b
+skillBonus skillType =
+    let
+        fieldName =
+            case skillType of
+                Military ->
+                    "military_bonus"
+
+                Political ->
+                    "political_bonus"
+
+        toSkillModifier str =
+            if str == "x" then
+                Decode.succeed Cards.XModifier
+
+            else
+                case String.toInt str of
+                    Just n ->
+                        Decode.succeed (Cards.FixedModifier n)
+
+                    Nothing ->
+                        Decode.fail "Invalid cost"
+    in
+    required fieldName (string |> Decode.andThen toSkillModifier)
+
+
+cost : Decoder (Cards.NumericalValue -> b) -> Decoder b
+cost =
+    let
+        toCost str =
+            if str == "x" then
+                Decode.succeed Cards.XValue
+
+            else
+                case String.toInt str of
+                    Just n ->
+                        Decode.succeed (Cards.FixedValue n)
+
+                    Nothing ->
+                        Decode.fail "Invalid cost"
+    in
+    optional "cost" (string |> Decode.andThen toCost) Cards.DashValue
+
+
+influenceCost =
+    optional "influence_cost" (maybe int) Nothing
 
 
 roleRequirement : Decoder (Maybe Cards.RoleTypes -> b) -> Decoder b

@@ -93,6 +93,37 @@ type Element
     | Earth
 
 
+
+-- NUMERICAL
+
+
+type NumericalValue
+    = FixedValue Int
+    | DashValue
+    | XValue
+
+
+type NumericalModifier
+    = FixedModifier Int
+    | XModifier
+
+
+
+-- CARDS
+
+
+type Card
+    = RoleCard RoleProperties
+    | StrongholdCard StrongholdProperties
+    | ProvinceCard ProvinceProperties
+    | DynastyHolding DynastyHoldingPropperties
+    | DynastyEvent DynastyEventProperties
+    | ConflictEvent ConflictEventProperties
+    | DynastyCharacter DynastyCharacterProperties
+    | ConflictCharacter ConflictCharacterPropperties
+    | ConflictAttachment ConflictAttachmentProperties
+
+
 type alias RoleProperties =
     { title : String
     , traits : List RoleTypes
@@ -136,98 +167,100 @@ type alias ProvinceProperties =
     }
 
 
+type alias DynastyEventProperties =
+    { title : String
+    , clan : Clan
+    , traits : List String
+    , cost : NumericalValue
+    , abilities : List String
+    , roleRequirement : Maybe RoleTypes
+    , formatRequirement : Maybe Format
+    , cycle : String
+    , cardNumber : Int
+    , artist : String
+    }
 
--- CARDS
+
+type alias ConflictEventProperties =
+    { title : String
+    , clan : Clan
+    , traits : List String
+    , cost : NumericalValue
+    , abilities : List String
+    , influenceCost : Maybe Int
+    , roleRequirement : Maybe RoleTypes
+    , formatRequirement : Maybe Format
+    , cycle : String
+    , cardNumber : Int
+    , artist : String
+    }
 
 
-type Card
-    = RoleCard RoleProperties
-    | StrongholdCard StrongholdProperties
-    | ProvinceCard ProvinceProperties
-    | DynastyHolding
-        { title : String
-        , uniqueness : Uniqueness
-        , clan : Clan
-        , traits : List String
-        , bonusStrength : Int
-        , abilities : List String
-        , roleRequirement : Maybe RoleTypes
-        , formatRequirement : Maybe Format
-        , cycle : String
-        , cardNumber : Int
-        , artist : String
-        }
-    | DynastyEvent
-        { title : String
-        , clan : Clan
-        , traits : List String
-        , cost : Maybe Int
-        , abilities : List String
-        , roleRequirement : Maybe RoleTypes
-        , formatRequirement : Maybe Format
-        , cycle : String
-        , cardNumber : Int
-        , artist : String
-        }
-    | ConflictEvent
-        { title : String
-        , clan : Clan
-        , traits : List String
-        , cost : Maybe Int
-        , abilities : List String
-        , influenceCost : Maybe Int
-        , roleRequirement : Maybe RoleTypes
-        , formatRequirement : Maybe Format
-        , cycle : String
-        , cardNumber : Int
-        , artist : String
-        }
-    | DynastyCharacter
-        { title : String
-        , uniqueness : Uniqueness
-        , clan : Clan
-        , traits : List String
-        , cost : Maybe Int
-        , militarySkill : Maybe Int
-        , politicalSkill : Maybe Int
-        , glory : Int
-        , abilities : List String
-        , roleRequirement : Maybe RoleTypes
-        , formatRequirement : Maybe Format
-        , cycle : String
-        , cardNumber : Int
-        , artist : String
-        }
-    | ConflictCharacter
-        { title : String
-        , uniqueness : Uniqueness
-        , clan : Clan
-        , traits : List String
-        , cost : Maybe Int
-        , militarySkill : Maybe Int
-        , politicalSkill : Maybe Int
-        , glory : Int
-        , abilities : List String
-        , influenceCost : Maybe Int
-        , roleRequirement : Maybe RoleTypes
-        , formatRequirement : Maybe Format
-        , cycle : String
-        , cardNumber : Int
-        , artist : String
-        }
-    | ConflictAttachment
-        { title : String
-        , uniqueness : Uniqueness
-        , clan : Clan
-        , traits : List String
-        , cost : Maybe Int
-        , militarySkillBonus : Maybe Int
-        , politicalSkillBonus : Maybe Int
-        , abilities : List String
-        , influenceCost : Maybe Int
-        , roleRequirement : Maybe RoleTypes
-        , formatRequirement : Maybe Format
-        , cycle : String
-        , cardNumber : Int
-        , artist : String
-        }
+type alias DynastyHoldingPropperties =
+    { title : String
+    , uniqueness : Uniqueness
+    , clan : Clan
+    , traits : List String
+    , bonusStrength : Int
+    , abilities : List String
+    , roleRequirement : Maybe RoleTypes
+    , formatRequirement : Maybe Format
+    , cycle : String
+    , cardNumber : Int
+    , artist : String
+    }
+
+
+type alias ConflictAttachmentProperties =
+    { title : String
+    , uniqueness : Uniqueness
+    , clan : Clan
+    , traits : List String
+    , cost : NumericalValue
+    , militarySkillBonus : NumericalModifier
+    , politicalSkillBonus : NumericalModifier
+    , abilities : List String
+    , influenceCost : Maybe Int
+    , roleRequirement : Maybe RoleTypes
+    , formatRequirement : Maybe Format
+    , cycle : String
+    , cardNumber : Int
+    , artist : String
+    }
+
+
+type alias DynastyCharacterProperties =
+    { title : String
+    , uniqueness : Uniqueness
+    , clan : Clan
+    , traits : List String
+    , cost : NumericalValue
+    , militarySkill : NumericalValue
+    , politicalSkill : NumericalValue
+    , glory : Int
+    , abilities : List String
+    , roleRequirement : Maybe RoleTypes
+    , formatRequirement : Maybe Format
+    , cycle : String
+    , cardNumber : Int
+    , artist : String
+    }
+
+
+type alias ConflictCharacterPropperties =
+    { title : String
+    , uniqueness : Uniqueness
+    , clan : Clan
+    , traits : List String
+    , cost : NumericalValue
+    , militarySkill : NumericalValue
+    , politicalSkill : NumericalValue
+    , glory : Int
+    , abilities : List String
+    , influenceCost : Maybe Int
+    , roleRequirement : Maybe RoleTypes
+    , formatRequirement : Maybe Format
+    , cycle : String
+    , cardNumber : Int
+    , artist : String
+    }
