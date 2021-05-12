@@ -1,11 +1,11 @@
 module UI.ClanFilterSelector exposing (Model, init, isClanAllowed, view)
 
+import Cards exposing (Clan(..), clanName)
 import EverySet exposing (EverySet, empty, insert, isEmpty, member, remove)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List
-import Rules.Clans exposing (Clan(..), clanName)
 
 
 type alias Model =
