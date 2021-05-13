@@ -2,16 +2,14 @@ module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import API.Cards
 import Card
-import Clan exposing (Clan(..), clanName)
+import Clan exposing (Clan(..))
 import Components.Header
-import Debug exposing (toString)
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http exposing (Error)
-import Json.Decode exposing (errorToString)
 import Page
 import Request
 import Shared
@@ -19,26 +17,6 @@ import String
 import UI.ClanFilterSelector
 import Url exposing (Protocol(..))
 import View exposing (View)
-
-
-
--- MODEL
-
-
-type alias Deck =
-    { stronghold : Card.Stronghold
-    , name : Maybe String
-    }
-
-
-type alias Filters =
-    { byClan : UI.ClanFilterSelector.Model }
-
-
-type Model
-    = Loading
-    | ChoosingStronghold (List Card.Card)
-    | Deckbuilding (List Card.Card) Filters Deck
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -51,18 +29,38 @@ page _ _ =
         }
 
 
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
+type alias Deck =
+    { stronghold : Card.Stronghold
+    , name : Maybe String
+    , role : Maybe Card.Role
+    }
+
+
+type alias Filters =
+    { byClan : UI.ClanFilterSelector.Model }
+
+
+type Model
+    = Loading
+    | Error
+    | ChoosingStronghold (List Card.Card)
+    | Deckbuilding (List Card.Card) Deck Filters
+
+
 init : ( Model, Cmd Msg )
 init =
     ( Loading, API.Cards.fetchCards FetchedCards )
 
 
-
--- UPDATE
-
-
 type Msg
     = FetchedCards (Result Http.Error (List Card.Card))
-    | StrongholdChosen Card.Stronghold
+    | StrongholdSelected Card.Stronghold
+    | StrongholdReset
     | ClanFilterChanged UI.ClanFilterSelector.Model
 
 
@@ -74,35 +72,20 @@ update msg model =
                 Ok cards ->
                     ( ChoosingStronghold cards, Cmd.none )
 
-                Err err ->
-                    case err of
-                        Http.BadBody e ->
-                            Debug.log e
-                                ( model, Cmd.none )
+                Err _ ->
+                    ( Error, Cmd.none )
 
-                        _ ->
-                            ( model, Cmd.none )
+        ( ChoosingStronghold cards, StrongholdSelected stronghold ) ->
+            ( Deckbuilding cards { stronghold = stronghold, name = Nothing, role = Nothing } { byClan = UI.ClanFilterSelector.init }, Cmd.none )
 
-        ( ChoosingStronghold cards, StrongholdChosen stronghold ) ->
-            ( Deckbuilding cards { byClan = UI.ClanFilterSelector.init } { stronghold = stronghold, name = Nothing }, Cmd.none )
+        ( Deckbuilding cards _ _, StrongholdReset ) ->
+            ( ChoosingStronghold cards, Cmd.none )
 
-        -- ClanFilterChanged clanFilters ->
-        --     ( { model | filterClan = clanFilters }, Cmd.none )
+        ( Deckbuilding cards deck filters, ClanFilterChanged clanFilters ) ->
+            ( Deckbuilding cards deck { filters | byClan = clanFilters }, Cmd.none )
+
         ( _, _ ) ->
             ( model, Cmd.none )
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
-
-
-
--- VIEW
 
 
 view : Model -> View Msg
@@ -121,11 +104,14 @@ view model =
                 Loading ->
                     viewLoading
 
+                Error ->
+                    viewError
+
                 ChoosingStronghold allCards ->
                     viewStrongholdSelector <| List.filterMap onlyStronghold allCards
 
-                Deckbuilding cards filters deck ->
-                    viewDeckbuilder cards filters deck
+                Deckbuilding cards deck filters ->
+                    viewDeckbuilder cards deck filters
     in
     { title = "Deckbuilder"
     , body =
@@ -133,6 +119,11 @@ view model =
         , viewForStep
         ]
     }
+
+
+viewError : Html Msg
+viewError =
+    div [] [ text "Error!" ]
 
 
 viewLoading : Html Msg
@@ -147,7 +138,7 @@ viewStrongholdSelector strongholds =
             case sh of
                 Card.Stronghold props ->
                     li []
-                        [ div [ onClick (StrongholdChosen sh) ] [ text props.title ]
+                        [ div [ onClick (StrongholdSelected sh) ] [ text props.title ]
                         ]
     in
     div []
@@ -157,15 +148,14 @@ viewStrongholdSelector strongholds =
         ]
 
 
-viewDeckbuilder : List Card.Card -> Filters -> Deck -> Html Msg
-viewDeckbuilder cards filters deck =
+viewDeckbuilder : List Card.Card -> Deck -> Filters -> Html Msg
+viewDeckbuilder cards deck filters =
     div []
         [ viewDeck deck
-
-        -- , aside []
-        --     [ viewFilters model
-        --     , viewCardOptions model
-        --     ]
+        , aside []
+            [ viewFilters filters
+            , viewCardsOptions cards deck filters
+            ]
         ]
 
 
@@ -209,9 +199,12 @@ viewDeckHeader deck =
     [ div [ class "decklist-header_stronghold" ]
         [ text <| Maybe.withDefault "" deck.name ]
     , div [ class "decklist-header_details" ]
-        [ h2 [] [ text strongholdName ]
+        [ h2 []
+            [ text strongholdName
+            , button [ onClick StrongholdReset ] [ text "X" ]
+            ]
+        , h3 [] (viewRole deck)
 
-        -- , h3 [] (viewRole model)
         -- , ul [] (viewProvinces model)
         ]
     ]
@@ -226,48 +219,51 @@ viewDeckSide cards =
     [ ul [] (List.map cardItem cards) ]
 
 
+viewFilters : Filters -> Html Msg
+viewFilters filters =
+    div [ class "filters" ]
+        [ p [] [ text "Filters" ]
+        , UI.ClanFilterSelector.view filters.byClan ClanFilterChanged
+        ]
 
--- viewFilters : Model -> Html Msg
--- viewFilters model =
---     div [ class "filters" ]
---         [ p [] [ text "Filters" ]
---         , UI.ClanFilterSelector.view model.filterClan ClanFilterChanged
---         ]
--- viewCardsOptions : Model -> Html Msg
--- viewCardsOptions model =
---     case model.allCardsData of
---         Nothing ->
---             text "loading"
---         Just allCardsData ->
---             let
---                 filteredCards =
---                     List.filter (isClanAllowed model.filterClan) allCardData
---             in
---             div [ class "cards" ]
---                 [ p [] [ text "Cards" ]
---                 , ul [] (List.map viewCardRow filteredCards)
---                 ]
--- viewCardRow : API.Cards.Card -> Html Msg
--- viewCardRow card =
---     li [] [ p [] [ text card.id, span [] (List.map (text << clanName) card.allowedClans) ] ]
--- viewRole : Model -> List (Html Msg)
--- viewRole model =
---     case model.role of
---         Just role ->
---             [ text role.title ]
---         Nothing ->
---             [ text "" ]
--- viewProvinces : Model -> List (Html Msg)
--- viewProvinces model =
---     let
---         viewProvince province =
---             li [] [ text province.title ]
---     in
---     List.map viewProvince model.provinces
--- isClanAllowed : EverySet.EverySet Rules.Clans.Clan -> API.Cards.Card -> Bool
--- isClanAllowed filter card =
---     case card.clan of
---         Nothing ->
---             False
---         Just clan ->
---             UI.ClanFilterSelector.isClanAllowed filter clan
+
+viewCardsOptions : List Card.Card -> Deck -> Filters -> Html Msg
+viewCardsOptions cards _ filters =
+    let
+        filteredCards =
+            List.filter (isClanAllowed filters.byClan) cards
+    in
+    div [ class "cards" ]
+        [ p [] [ text "Cards" ]
+        , ul [] (List.map viewCardRow filteredCards)
+        ]
+
+
+isClanAllowed : EverySet.EverySet Clan.Clan -> Card.Card -> Bool
+isClanAllowed filter _ =
+    let
+        clan =
+            Clan.Crab
+    in
+    UI.ClanFilterSelector.isClanAllowed filter clan
+
+
+viewCardRow : Card.Card -> Html Msg
+viewCardRow card =
+    li []
+        [ p []
+            [ text (Card.title card)
+            ]
+        ]
+
+
+viewRole : Deck -> List (Html Msg)
+viewRole deck =
+    case deck.role of
+        Just role ->
+            case role of
+                Card.Role props ->
+                    [ text props.title ]
+
+        Nothing ->
+            [ text "No Role" ]
