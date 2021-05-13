@@ -43,15 +43,10 @@ type Element
 -- NUMERICAL
 
 
-type NumericalValue
-    = FixedValue Int
-    | DashValue
-    | XValue
-
-
-type NumericalModifier
-    = FixedModifier Int
-    | XModifier
+type Numerical
+    = Fixed Int
+    | Dash
+    | Variable
 
 
 
@@ -103,9 +98,9 @@ type alias RoleProps =
     , traits : List RoleTypes
     , abilities : List String
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -119,9 +114,9 @@ type alias StrongholdProps =
     , influenceValue : Int
     , abilities : List String
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -130,14 +125,14 @@ type alias ProvinceProps =
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
-    , strength : NumericalValue
+    , strength : Numerical
     , elements : List Element
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -145,13 +140,13 @@ type alias DynastyEventProps =
     { title : String
     , clan : Clan
     , traits : List String
-    , cost : NumericalValue
+    , cost : Numerical
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -159,14 +154,14 @@ type alias ConflictEventProps =
     { title : String
     , clan : Clan
     , traits : List String
-    , cost : NumericalValue
+    , cost : Numerical
     , abilities : List String
     , influenceCost : Maybe Int
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -179,9 +174,9 @@ type alias HoldingProps =
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -190,16 +185,16 @@ type alias AttachmentProps =
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
-    , cost : NumericalValue
-    , militarySkillBonus : NumericalModifier
-    , politicalSkillBonus : NumericalModifier
+    , cost : Numerical
+    , militarySkillBonus : Numerical
+    , politicalSkillBonus : Numerical
     , abilities : List String
     , influenceCost : Maybe Int
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -208,16 +203,16 @@ type alias DynastyCharacterProps =
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
-    , cost : NumericalValue
-    , militarySkill : NumericalValue
-    , politicalSkill : NumericalValue
+    , cost : Numerical
+    , militarySkill : Numerical
+    , politicalSkill : Numerical
     , glory : Int
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 
@@ -226,17 +221,17 @@ type alias ConflictCharacterProps =
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
-    , cost : NumericalValue
-    , militarySkill : NumericalValue
-    , politicalSkill : NumericalValue
+    , cost : Numerical
+    , militarySkill : Numerical
+    , politicalSkill : Numerical
     , glory : Int
     , abilities : List String
     , influenceCost : Maybe Int
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , cycle : String
-    , cardNumber : String
-    , artist : String
+    , cycle : Maybe String
+    , cardNumber : Maybe String
+    , artist : Maybe String
     }
 
 

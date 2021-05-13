@@ -74,8 +74,14 @@ update msg model =
                 Ok cards ->
                     ( ChoosingStronghold cards, Cmd.none )
 
-                _ ->
-                    ( model, Cmd.none )
+                Err err ->
+                    case err of
+                        Http.BadBody e ->
+                            Debug.log e
+                                ( model, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
 
         ( ChoosingStronghold cards, StrongholdChosen stronghold ) ->
             ( Deckbuilding cards { byClan = UI.ClanFilterSelector.init } { stronghold = stronghold, name = Nothing }, Cmd.none )

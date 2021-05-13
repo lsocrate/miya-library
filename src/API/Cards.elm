@@ -253,7 +253,7 @@ type SkillType
     | Political
 
 
-skill : SkillType -> Decoder (Card.NumericalValue -> b) -> Decoder b
+skill : SkillType -> Decoder (Card.Numerical -> b) -> Decoder b
 skill skillType =
     let
         fieldName =
@@ -264,28 +264,31 @@ skill skillType =
                 Political ->
                     "political"
     in
-    required fieldName (string |> Decode.andThen toNumericalValue)
+    optional fieldName (string |> Decode.andThen toNumericalValue) Card.Dash
 
 
-toNumericalValue : String -> Decoder Card.NumericalValue
+toNumericalValue : String -> Decoder Card.Numerical
 toNumericalValue string =
     case string of
-        "x" ->
-            Decode.succeed Card.XValue
+        "+X" ->
+            Decode.succeed Card.Variable
 
         "X" ->
-            Decode.succeed Card.XValue
+            Decode.succeed Card.Variable
+
+        "-" ->
+            Decode.succeed Card.Dash
 
         _ ->
             case String.toInt string of
                 Just n ->
-                    Decode.succeed (Card.FixedValue n)
+                    Decode.succeed (Card.Fixed n)
 
                 Nothing ->
                     Decode.fail "Invalid numerical value"
 
 
-skillBonus : SkillType -> Decoder (Card.NumericalModifier -> b) -> Decoder b
+skillBonus : SkillType -> Decoder (Card.Numerical -> b) -> Decoder b
 skillBonus skillType =
     let
         fieldName =
@@ -295,38 +298,13 @@ skillBonus skillType =
 
                 Political ->
                     "political_bonus"
-
-        toSkillModifier str =
-            if str == "x" then
-                Decode.succeed Card.XModifier
-
-            else
-                case String.toInt str of
-                    Just n ->
-                        Decode.succeed (Card.FixedModifier n)
-
-                    Nothing ->
-                        Decode.fail "Invalid cost"
     in
-    required fieldName (string |> Decode.andThen toSkillModifier)
+    required fieldName (string |> Decode.andThen toNumericalValue)
 
 
-cost : Decoder (Card.NumericalValue -> b) -> Decoder b
+cost : Decoder (Card.Numerical -> b) -> Decoder b
 cost =
-    let
-        toCost str =
-            if str == "x" then
-                Decode.succeed Card.XValue
-
-            else
-                case String.toInt str of
-                    Just n ->
-                        Decode.succeed (Card.FixedValue n)
-
-                    Nothing ->
-                        Decode.fail "Invalid cost"
-    in
-    optional "cost" (string |> Decode.andThen toCost) Card.DashValue
+    optional "cost" (string |> Decode.andThen toNumericalValue) Card.Dash
 
 
 influenceCost : Decoder (Maybe Int -> b) -> Decoder b
@@ -420,7 +398,7 @@ bonusStrength =
     required "strength_bonus" modifier
 
 
-strength : Decoder (Card.NumericalValue -> b) -> Decoder b
+strength : Decoder (Card.Numerical -> b) -> Decoder b
 strength =
     required "strength" (string |> Decode.andThen toNumericalValue)
 
@@ -437,12 +415,12 @@ title =
 
 abilities : Decoder (List String -> b) -> Decoder b
 abilities =
-    required "text_canonical" <| map (String.split "\n") string
+    optional "text_canonical" (map (String.split "\n") string) []
 
 
 formatRequirement : Decoder (Maybe Format.Format -> b) -> Decoder b
 formatRequirement =
-    required "text_canonical" <| map (always Nothing) string
+    optional "text_canonical" (map (always Nothing) string) Nothing
 
 
 uniqueness : Decoder (Card.Uniqueness -> b) -> Decoder b
