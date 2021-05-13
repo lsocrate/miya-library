@@ -1,5 +1,6 @@
 module Card exposing (..)
 
+import Clan exposing (Clan)
 import Format exposing (Format)
 
 
@@ -10,49 +11,6 @@ import Format exposing (Format)
 type Uniqueness
     = Unique
     | NonUnique
-
-
-
--- CLANS
-
-
-type Clan
-    = Crab
-    | Crane
-    | Dragon
-    | Lion
-    | Phoenix
-    | Scorpion
-    | Unicorn
-    | Neutral
-
-
-clanName : Clan -> String
-clanName clan =
-    case clan of
-        Crab ->
-            "Crab"
-
-        Crane ->
-            "Crane"
-
-        Dragon ->
-            "Dragon"
-
-        Lion ->
-            "Lion"
-
-        Phoenix ->
-            "Phoenix"
-
-        Scorpion ->
-            "Scorpion"
-
-        Unicorn ->
-            "Unicorn"
-
-        Neutral ->
-            "Neutral"
 
 
 

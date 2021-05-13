@@ -1,6 +1,7 @@
 module API.Cards exposing (fetchCards)
 
 import Card
+import Clan
 import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
@@ -479,31 +480,31 @@ modifier =
     string |> Decode.andThen decodeModifier
 
 
-clan : Decoder (Card.Clan -> b) -> Decoder b
+clan : Decoder (Clan.Clan -> b) -> Decoder b
 clan =
     let
         decodeClan str =
             case str of
                 "crab" ->
-                    Decode.succeed Card.Crab
+                    Decode.succeed Clan.Crab
 
                 "crane" ->
-                    Decode.succeed Card.Crane
+                    Decode.succeed Clan.Crane
 
                 "dragon" ->
-                    Decode.succeed Card.Dragon
+                    Decode.succeed Clan.Dragon
 
                 "lion" ->
-                    Decode.succeed Card.Lion
+                    Decode.succeed Clan.Lion
 
                 "phoenix" ->
-                    Decode.succeed Card.Phoenix
+                    Decode.succeed Clan.Phoenix
 
                 "scorpion" ->
-                    Decode.succeed Card.Scorpion
+                    Decode.succeed Clan.Scorpion
 
                 "unicorn" ->
-                    Decode.succeed Card.Unicorn
+                    Decode.succeed Clan.Unicorn
 
                 _ ->
                     Decode.fail "Invalid clan"
