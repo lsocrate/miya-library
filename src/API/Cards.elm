@@ -2,7 +2,6 @@ module API.Cards exposing (fetchCards)
 
 import Card
 import Clan
-import Debug exposing (toString)
 import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
@@ -436,19 +435,19 @@ uniqueness =
     required "unicity" <| map toUnique bool
 
 
-cycle : Decoder (String -> b) -> Decoder b
+cycle : Decoder (Maybe String -> b) -> Decoder b
 cycle =
-    required "pack_cards" <| index 0 (field "pack" (field "id" string))
+    required "pack_cards" <| maybe (index 0 (field "pack" (field "id" string)))
 
 
-cardNumber : Decoder (String -> b) -> Decoder b
+cardNumber : Decoder (Maybe String -> b) -> Decoder b
 cardNumber =
-    required "pack_cards" <| index 0 (field "position" string)
+    required "pack_cards" <| maybe (index 0 (field "position" string))
 
 
-artist : Decoder (String -> b) -> Decoder b
+artist : Decoder (Maybe String -> b) -> Decoder b
 artist =
-    required "pack_cards" <| index 0 (field "illustrator" string)
+    required "pack_cards" <| maybe (index 0 (field "illustrator" string))
 
 
 modifier : Decoder Int
@@ -493,6 +492,9 @@ clan =
 
                 "neutral" ->
                     Decode.succeed Clan.Neutral
+
+                "shadowlands" ->
+                    Decode.succeed Clan.Shadowlands
 
                 _ ->
                     Decode.fail "Invalid clan"

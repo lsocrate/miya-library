@@ -10,6 +10,7 @@ type Clan
     | Scorpion
     | Unicorn
     | Neutral
+    | Shadowlands
 
 
 clanName : Clan -> String
@@ -38,3 +39,6 @@ clanName clan =
 
         Neutral ->
             "Neutral"
+
+        Shadowlands ->
+            "Shadowlands"
