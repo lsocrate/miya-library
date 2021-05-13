@@ -48,8 +48,8 @@ type alias Filters =
 type Model
     = Loading
     | Error
-    | ChoosingStronghold (List Card.Card)
-    | Deckbuilding (List Card.Card) Deck Filters
+    | ChoosingStronghold { allCards : List Card.Card, oldDeck : Maybe Deck }
+    | Deckbuilding { allCards : List Card.Card, deck : Deck, filters : Filters }
 
 
 init : ( Model, Cmd Msg )
@@ -66,23 +66,36 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( model, msg ) of
-        ( Loading, FetchedCards result ) ->
+    case ( msg, model ) of
+        ( FetchedCards result, Loading ) ->
             case result of
                 Ok cards ->
-                    ( ChoosingStronghold cards, Cmd.none )
+                    ( ChoosingStronghold { allCards = cards, oldDeck = Nothing }, Cmd.none )
 
                 Err _ ->
                     ( Error, Cmd.none )
 
-        ( ChoosingStronghold cards, StrongholdSelected stronghold ) ->
-            ( Deckbuilding cards { stronghold = stronghold, name = Nothing, role = Nothing } { byClan = UI.ClanFilterSelector.init }, Cmd.none )
+        ( StrongholdSelected stronghold, ChoosingStronghold { allCards, oldDeck } ) ->
+            ( Deckbuilding
+                { allCards = allCards
+                , filters = { byClan = UI.ClanFilterSelector.init }
+                , deck = Maybe.withDefault { stronghold = stronghold, name = Nothing, role = Nothing } oldDeck
+                }
+            , Cmd.none
+            )
 
-        ( Deckbuilding cards _ _, StrongholdReset ) ->
-            ( ChoosingStronghold cards, Cmd.none )
+        ( StrongholdReset, Deckbuilding { allCards, deck } ) ->
+            ( ChoosingStronghold { allCards = allCards, oldDeck = Just deck }, Cmd.none )
 
-        ( Deckbuilding cards deck filters, ClanFilterChanged clanFilters ) ->
-            ( Deckbuilding cards deck { filters | byClan = clanFilters }, Cmd.none )
+        ( ClanFilterChanged clanFilters, Deckbuilding props ) ->
+            let
+                { filters } =
+                    props
+
+                newFilters =
+                    { filters | byClan = clanFilters }
+            in
+            ( Deckbuilding { props | filters = newFilters }, Cmd.none )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -107,11 +120,11 @@ view model =
                 Error ->
                     viewError
 
-                ChoosingStronghold allCards ->
+                ChoosingStronghold { allCards } ->
                     viewStrongholdSelector <| List.filterMap onlyStronghold allCards
 
-                Deckbuilding cards deck filters ->
-                    viewDeckbuilder cards deck filters
+                Deckbuilding { allCards, deck, filters } ->
+                    viewDeckbuilder allCards deck filters
     in
     { title = "Deckbuilder"
     , body =
@@ -204,8 +217,6 @@ viewDeckHeader deck =
             , button [ onClick StrongholdReset ] [ text "X" ]
             ]
         , h3 [] (viewRole deck)
-
-        -- , ul [] (viewProvinces model)
         ]
     ]
 
