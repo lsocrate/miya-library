@@ -1,7 +1,7 @@
 module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import API.Cards
-import Cards as Cards
+import Cards as Cards exposing (Clan(..), clanName)
 import Components.Header
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
@@ -11,8 +11,6 @@ import Html.Events exposing (onClick)
 import Http
 import Page
 import Request
-import Rules.Clans exposing (Clan(..), clanName)
-import Rules.Formats as Formats
 import Shared
 import String
 import UI.ClanFilterSelector
@@ -21,7 +19,7 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
+page _ _ =
     Page.element
         { init = init
         , update = update
@@ -30,12 +28,8 @@ page shared req =
         }
 
 
-type alias CardsData =
-    List API.Cards.Card
-
-
 type alias Deck =
-    { stronghold : Cards.StrongholdData
+    { stronghold : Cards.Card
 
     -- , format : Formats.Format
     -- , role : Maybe Cards.RoleData

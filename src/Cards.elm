@@ -112,6 +112,46 @@ type NumericalModifier
 -- CARDS
 
 
+type ACard
+    = AStronghold BStronghold
+    | ARole BRole
+    | AProvince BProvince
+    | AChar BCharacter
+    | AEvent BEvent
+    | AAttachment BAttachment
+    | AHolding BHolding
+
+
+type BStronghold
+    = BStronghold StrongholdProperties
+
+
+type BRole
+    = BRole RoleProperties
+
+
+type BProvince
+    = BProvince ProvinceProperties
+
+
+type BCharacter
+    = BDynChar DynastyCharacterProperties
+    | BConfChar ConflictCharacterPropperties
+
+
+type BEvent
+    = BDynEvent DynastyEventProperties
+    | BConfEvent ConflictEventProperties
+
+
+type BAttachment
+    = BAttachment ConflictAttachmentProperties
+
+
+type BHolding
+    = BHolding DynastyHoldingPropperties
+
+
 type Card
     = RoleCard RoleProperties
     | StrongholdCard StrongholdProperties

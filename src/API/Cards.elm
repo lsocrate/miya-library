@@ -8,7 +8,7 @@ import List
 import String
 
 
-fetchCards : (Result Http.Error (List Cards.Card) -> msg) -> Cmd msg
+fetchCards : (Result Http.Error (List Cards.ACard) -> msg) -> Cmd msg
 fetchCards msg =
     Http.get
         { url = "https://api.fiveringsdb.com/cards"
@@ -16,12 +16,12 @@ fetchCards msg =
         }
 
 
-cardsDecoder : Decoder (List Cards.Card)
+cardsDecoder : Decoder (List Cards.ACard)
 cardsDecoder =
     field "records" (list card) |> map (List.filterMap identity)
 
 
-card : Decoder (Maybe Cards.Card)
+card : Decoder (Maybe Cards.ACard)
 card =
     let
         decodeCard decoder =
@@ -38,29 +38,29 @@ card =
         |> Decode.andThen decodeCard
 
 
-decoderForCardType : String -> String -> Maybe (Decoder Cards.Card)
+decoderForCardType : String -> String -> Maybe (Decoder Cards.ACard)
 decoderForCardType cardType_ cardBack =
     case ( cardType_, cardBack ) of
-        ( "role", "role" ) ->
-            Just roleDecoder
-
         ( "province", "stronghold" ) ->
             Just strongholdDecoder
 
+        ( "role", "role" ) ->
+            Just roleDecoder
+
         ( "province", "province" ) ->
             Just provinceDecoder
-
-        ( "dynasty", "event" ) ->
-            Just dynastyEventDecoder
-
-        ( "conflict", "event" ) ->
-            Just conflictEventDecoder
 
         ( "dynasty", "holding" ) ->
             Just holdingDecoder
 
         ( "conflict", "attachment" ) ->
             Just attachmentDecoder
+
+        ( "dynasty", "event" ) ->
+            Just dynastyEventDecoder
+
+        ( "conflict", "event" ) ->
+            Just conflictEventDecoder
 
         ( "dynasty", "character" ) ->
             Just dynastyCharacterDecoder
@@ -72,7 +72,60 @@ decoderForCardType cardType_ cardBack =
             Nothing
 
 
-holdingDecoder : Decoder Cards.Card
+
+-- CARD TYPE DECODERS
+
+
+strongholdDecoder : Decoder Cards.ACard
+strongholdDecoder =
+    Decode.succeed Cards.StrongholdProperties
+        |> title
+        |> clan
+        |> traits
+        |> bonusStrength
+        |> startingHonor
+        |> fateValue
+        |> influenceValue
+        |> abilities
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.AStronghold << Cards.BStronghold)
+
+
+roleDecoder : Decoder Cards.ACard
+roleDecoder =
+    Decode.succeed Cards.RoleProperties
+        |> title
+        |> roleTraits
+        |> abilities
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.ARole << Cards.BRole)
+
+
+provinceDecoder : Decoder Cards.ACard
+provinceDecoder =
+    Decode.succeed Cards.ProvinceProperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> strength
+        |> elements
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.AProvince << Cards.BProvince)
+
+
+holdingDecoder : Decoder Cards.ACard
 holdingDecoder =
     Decode.succeed Cards.DynastyHoldingPropperties
         |> title
@@ -86,10 +139,83 @@ holdingDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map Cards.DynastyHolding
+        |> map (Cards.AHolding << Cards.BHolding)
 
 
-conflictharacterDecoder : Decoder Cards.Card
+attachmentDecoder : Decoder Cards.ACard
+attachmentDecoder =
+    Decode.succeed Cards.ConflictAttachmentProperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> cost
+        |> skillBonus Military
+        |> skillBonus Political
+        |> abilities
+        |> influenceCost
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.AAttachment << Cards.BAttachment)
+
+
+dynastyEventDecoder : Decoder Cards.ACard
+dynastyEventDecoder =
+    Decode.succeed Cards.DynastyEventProperties
+        |> title
+        |> clan
+        |> traits
+        |> cost
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.AEvent << Cards.BDynEvent)
+
+
+conflictEventDecoder : Decoder Cards.ACard
+conflictEventDecoder =
+    Decode.succeed Cards.ConflictEventProperties
+        |> title
+        |> clan
+        |> traits
+        |> cost
+        |> abilities
+        |> influenceCost
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.AEvent << Cards.BConfEvent)
+
+
+dynastyCharacterDecoder : Decoder Cards.ACard
+dynastyCharacterDecoder =
+    Decode.succeed Cards.DynastyCharacterProperties
+        |> title
+        |> uniqueness
+        |> clan
+        |> traits
+        |> cost
+        |> skill Military
+        |> skill Political
+        |> glory
+        |> abilities
+        |> roleRequirement
+        |> formatRequirement
+        |> cycle
+        |> cardNumber
+        |> artist
+        |> map (Cards.AChar << Cards.BDynChar)
+
+
+conflictharacterDecoder : Decoder Cards.ACard
 conflictharacterDecoder =
     Decode.succeed Cards.ConflictCharacterPropperties
         |> title
@@ -107,129 +233,11 @@ conflictharacterDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map Cards.ConflictCharacter
+        |> map (Cards.AChar << Cards.BConfChar)
 
 
-dynastyCharacterDecoder : Decoder Cards.Card
-dynastyCharacterDecoder =
-    Decode.succeed Cards.DynastyCharacterProperties
-        |> title
-        |> uniqueness
-        |> clan
-        |> traits
-        |> cost
-        |> skill Military
-        |> skill Political
-        |> glory
-        |> abilities
-        |> roleRequirement
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.DynastyCharacter
 
-
-attachmentDecoder : Decoder Cards.Card
-attachmentDecoder =
-    Decode.succeed Cards.ConflictAttachmentProperties
-        |> title
-        |> uniqueness
-        |> clan
-        |> traits
-        |> cost
-        |> skillBonus Military
-        |> skillBonus Political
-        |> abilities
-        |> influenceCost
-        |> roleRequirement
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.ConflictAttachment
-
-
-conflictEventDecoder : Decoder Cards.Card
-conflictEventDecoder =
-    Decode.succeed Cards.ConflictEventProperties
-        |> title
-        |> clan
-        |> traits
-        |> cost
-        |> abilities
-        |> influenceCost
-        |> roleRequirement
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.ConflictEvent
-
-
-dynastyEventDecoder : Decoder Cards.Card
-dynastyEventDecoder =
-    Decode.succeed Cards.DynastyEventProperties
-        |> title
-        |> clan
-        |> traits
-        |> cost
-        |> abilities
-        |> roleRequirement
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.DynastyEvent
-
-
-roleDecoder : Decoder Cards.Card
-roleDecoder =
-    Decode.succeed Cards.RoleProperties
-        |> title
-        |> roleTraits
-        |> abilities
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.RoleCard
-
-
-strongholdDecoder : Decoder Cards.Card
-strongholdDecoder =
-    Decode.succeed Cards.StrongholdProperties
-        |> title
-        |> clan
-        |> traits
-        |> bonusStrength
-        |> startingHonor
-        |> fateValue
-        |> influenceValue
-        |> abilities
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.StrongholdCard
-
-
-provinceDecoder : Decoder Cards.Card
-provinceDecoder =
-    Decode.succeed Cards.ProvinceProperties
-        |> title
-        |> uniqueness
-        |> clan
-        |> traits
-        |> strength
-        |> elements
-        |> abilities
-        |> roleRequirement
-        |> formatRequirement
-        |> cycle
-        |> cardNumber
-        |> artist
-        |> map Cards.ProvinceCard
+-- PROPERTY DECODERS
 
 
 glory : Decoder (Int -> b) -> Decoder b
@@ -312,6 +320,7 @@ cost =
     optional "cost" (string |> Decode.andThen toCost) Cards.DashValue
 
 
+influenceCost : Decoder (Maybe Int -> b) -> Decoder b
 influenceCost =
     optional "influence_cost" (maybe int) Nothing
 
