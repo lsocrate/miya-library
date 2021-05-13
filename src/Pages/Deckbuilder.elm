@@ -1,14 +1,17 @@
 module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import API.Cards
-import Card as Cards exposing (Clan(..), clanName)
+import Card
+import Clan exposing (Clan(..), clanName)
 import Components.Header
+import Debug exposing (toString)
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Http
+import Http exposing (Error)
+import Json.Decode exposing (errorToString)
 import Page
 import Request
 import Shared
@@ -16,6 +19,26 @@ import String
 import UI.ClanFilterSelector
 import Url exposing (Protocol(..))
 import View exposing (View)
+
+
+
+-- MODEL
+
+
+type alias Deck =
+    { stronghold : Card.Stronghold
+    , name : Maybe String
+    }
+
+
+type alias Filters =
+    { byClan : UI.ClanFilterSelector.Model }
+
+
+type Model
+    = Loading
+    | ChoosingStronghold (List Card.Card)
+    | Deckbuilding (List Card.Card) Filters Deck
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -28,30 +51,9 @@ page _ _ =
         }
 
 
-type alias Deck =
-    { stronghold : Cards.Card
-
-    -- , format : Formats.Format
-    -- , role : Maybe Cards.RoleData
-    -- , provinces : List Cards.ProvinceData
-    -- , deckCards : List ( Cards.Card, Int )
-    -- , deckName : Maybe String
-    }
-
-
-type alias Filters =
-    { byClan : UI.ClanFilterSelector.Model }
-
-
-type Model
-    = Loading
-    | ChoosingStronghold CardsData
-    | Deckbuilding CardsData Filters Deck
-
-
 init : ( Model, Cmd Msg )
 init =
-    ( Loading, API.Card.fetchCards FetchedCards )
+    ( Loading, API.Cards.fetchCards FetchedCards )
 
 
 
@@ -59,8 +61,8 @@ init =
 
 
 type Msg
-    = FetchedCards (Result Http.Error (List API.Cards.Card))
-    | StrongholdChosen API.Cards.Card
+    = FetchedCards (Result Http.Error (List Card.Card))
+    | StrongholdChosen Card.Stronghold
     | ClanFilterChanged UI.ClanFilterSelector.Model
 
 
@@ -69,14 +71,14 @@ update msg model =
     case ( model, msg ) of
         ( Loading, FetchedCards result ) ->
             case result of
-                Ok allCardsData ->
-                    ( ChoosingStronghold allCardData, Cmd.none )
+                Ok cards ->
+                    ( ChoosingStronghold cards, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
-        ( ChoosingStronghold allCards, StrongholdChosen sh ) ->
-            ( Deckbuilding allCards { byClan = UI.ClanFilterSelector.init } { stronghold = sh }, Cmd.none )
+        ( ChoosingStronghold cards, StrongholdChosen stronghold ) ->
+            ( Deckbuilding cards { byClan = UI.ClanFilterSelector.init } { stronghold = stronghold, name = Nothing }, Cmd.none )
 
         -- ClanFilterChanged clanFilters ->
         --     ( { model | filterClan = clanFilters }, Cmd.none )
@@ -100,13 +102,24 @@ subscriptions model =
 view : Model -> View Msg
 view model =
     let
+        onlyStronghold card =
+            case card of
+                Card.StrongholdType stronghold ->
+                    Just stronghold
+
+                _ ->
+                    Nothing
+
         viewForStep =
             case model of
                 Loading ->
                     viewLoading
 
                 ChoosingStronghold allCards ->
-                    viewStrongholdSelector <| List.filter isStronghold allCards
+                    viewStrongholdSelector <| List.filterMap onlyStronghold allCards
+
+                Deckbuilding cards filters deck ->
+                    viewDeckbuilder cards filters deck
     in
     { title = "Deckbuilder"
     , body =
@@ -116,86 +129,52 @@ view model =
     }
 
 
-isStronghold : API.Cards.Card -> Bool
-isStronghold card =
-    case card.cardType of
-        Just cardType ->
-            cardType == Cards.StrongholdFormat
-
-        _ ->
-            False
-
-
 viewLoading : Html Msg
 viewLoading =
     div [] [ text "Loading" ]
 
 
-viewStrongholdSelector : CardsData -> Html Msg
+viewStrongholdSelector : List Card.Stronghold -> Html Msg
 viewStrongholdSelector strongholds =
     let
-        viewStrongholdOption sh =
-            li [] [ div [ onClick (StrongholdChosen sh) ] [ text sh.name ] ]
+        strongholdOption sh =
+            case sh of
+                Card.Stronghold props ->
+                    li []
+                        [ div [ onClick (StrongholdChosen sh) ] [ text props.title ]
+                        ]
     in
     div []
         [ h2 [] [ text "Choose a stronghold" ]
-        , ul [] (List.map viewStrongholdOption strongholds)
+        , ul []
+            (List.map strongholdOption strongholds)
         ]
 
 
-viewDeckbuild : Model -> Html Msg
-viewDeckbuild model =
+viewDeckbuilder : List Card.Card -> Filters -> Deck -> Html Msg
+viewDeckbuilder cards filters deck =
     div []
-        [ viewDeck model
-        , aside []
-            [ viewFilters model
-            , viewCardOptions model
-            ]
+        [ viewDeck deck
+
+        -- , aside []
+        --     [ viewFilters model
+        --     , viewCardOptions model
+        --     ]
         ]
 
 
-viewFilters : Model -> Html Msg
-viewFilters model =
-    div [ class "filters" ]
-        [ p [] [ text "Filters" ]
-        , UI.ClanFilterSelector.view model.filterClan ClanFilterChanged
-        ]
-
-
-viewCardsOptions : Model -> Html Msg
-viewCardsOptions model =
-    case model.allCardsData of
-        Nothing ->
-            text "loading"
-
-        Just allCardsData ->
-            let
-                filteredCards =
-                    List.filter (isClanAllowed model.filterClan) allCardData
-            in
-            div [ class "cards" ]
-                [ p [] [ text "Cards" ]
-                , ul [] (List.map viewCardRow filteredCards)
-                ]
-
-
-viewCardRow : API.Cards.Card -> Html Msg
-viewCardRow card =
-    li [] [ p [] [ text card.id, span [] (List.map (text << clanName) card.allowedClans) ] ]
-
-
-viewDeck : Model -> Html Msg
-viewDeck model =
+viewDeck : Deck -> Html Msg
+viewDeck deck =
     let
-        ( dynastyDeck, other ) =
-            List.partition (Tuple.first >> Card.hasBack Cards.Dynasty) model.deckCards
+        dynastyDeck =
+            []
 
-        ( conflictDeck, _ ) =
-            List.partition (Tuple.first >> Card.hasBack Cards.Conflict) other
+        conflictDeck =
+            []
     in
     main_ [ class "decklist", id "decklist" ]
-        [ div [ class "decklist-deck_name" ] (viewDeckName model)
-        , div [ class "decklist-header" ] (viewDeckHeader model)
+        [ div [ class "decklist-deck_name" ] (viewDeckName deck)
+        , div [ class "decklist-header" ] (viewDeckHeader deck)
         , div [ class "decklist-decks" ]
             [ div [ class "decklist-deck" ] (viewDeckSide dynastyDeck)
             , div [ class "decklist-deck" ] (viewDeckSide conflictDeck)
@@ -203,35 +182,9 @@ viewDeck model =
         ]
 
 
-viewDeckSide : List ( Cards.Card, Int ) -> List (Html Msg)
-viewDeckSide cards =
-    let
-        line qty card =
-            Just (li [] [ text (String.fromInt qty), text card.title ])
-
-        viewCard ( card, qty ) =
-            case card of
-                Cards.CardCharacter _ character ->
-                    line qty character
-
-                Cards.CardEvent _ event ->
-                    line qty event
-
-                Cards.CardHolding _ holding ->
-                    line qty holding
-
-                Cards.CardAttachment _ attachment ->
-                    line qty attachment
-
-                _ ->
-                    Nothing
-    in
-    [ ul [] (List.filterMap viewCard cards) ]
-
-
-viewDeckName : Model -> List (Html Msg)
-viewDeckName model =
-    case model.deckName of
+viewDeckName : Deck -> List (Html Msg)
+viewDeckName deck =
+    case deck.name of
         Just deckName ->
             [ h1 [ class "decklist-deck_name" ] [ text deckName ] ]
 
@@ -239,42 +192,76 @@ viewDeckName model =
             [ h1 [ class "decklist-deck_name" ] [ text "Unnamed" ] ]
 
 
-viewDeckHeader : Model -> List (Html Msg)
-viewDeckHeader model =
+viewDeckHeader : Deck -> List (Html Msg)
+viewDeckHeader deck =
+    let
+        strongholdName =
+            case deck.stronghold of
+                Card.Stronghold props ->
+                    props.title
+    in
     [ div [ class "decklist-header_stronghold" ]
-        [ text model.stronghold.title ]
+        [ text <| Maybe.withDefault "" deck.name ]
     , div [ class "decklist-header_details" ]
-        [ h2 [] [ text model.stronghold.title ]
-        , h3 [] (viewRole model)
-        , ul [] (viewProvinces model)
+        [ h2 [] [ text strongholdName ]
+
+        -- , h3 [] (viewRole model)
+        -- , ul [] (viewProvinces model)
         ]
     ]
 
 
-viewRole : Model -> List (Html Msg)
-viewRole model =
-    case model.role of
-        Just role ->
-            [ text role.title ]
-
-        Nothing ->
-            [ text "" ]
-
-
-viewProvinces : Model -> List (Html Msg)
-viewProvinces model =
+viewDeckSide : List ( Card.Card, Int ) -> List (Html Msg)
+viewDeckSide cards =
     let
-        viewProvince province =
-            li [] [ text province.title ]
+        cardItem ( card, qty ) =
+            li [] [ text (String.fromInt qty), text (Card.title card) ]
     in
-    List.map viewProvince model.provinces
+    [ ul [] (List.map cardItem cards) ]
 
 
-isClanAllowed : EverySet.EverySet Rules.Clans.Clan -> API.Cards.Card -> Bool
-isClanAllowed filter card =
-    case card.clan of
-        Nothing ->
-            False
 
-        Just clan ->
-            UI.ClanFilterSelector.isClanAllowed filter clan
+-- viewFilters : Model -> Html Msg
+-- viewFilters model =
+--     div [ class "filters" ]
+--         [ p [] [ text "Filters" ]
+--         , UI.ClanFilterSelector.view model.filterClan ClanFilterChanged
+--         ]
+-- viewCardsOptions : Model -> Html Msg
+-- viewCardsOptions model =
+--     case model.allCardsData of
+--         Nothing ->
+--             text "loading"
+--         Just allCardsData ->
+--             let
+--                 filteredCards =
+--                     List.filter (isClanAllowed model.filterClan) allCardData
+--             in
+--             div [ class "cards" ]
+--                 [ p [] [ text "Cards" ]
+--                 , ul [] (List.map viewCardRow filteredCards)
+--                 ]
+-- viewCardRow : API.Cards.Card -> Html Msg
+-- viewCardRow card =
+--     li [] [ p [] [ text card.id, span [] (List.map (text << clanName) card.allowedClans) ] ]
+-- viewRole : Model -> List (Html Msg)
+-- viewRole model =
+--     case model.role of
+--         Just role ->
+--             [ text role.title ]
+--         Nothing ->
+--             [ text "" ]
+-- viewProvinces : Model -> List (Html Msg)
+-- viewProvinces model =
+--     let
+--         viewProvince province =
+--             li [] [ text province.title ]
+--     in
+--     List.map viewProvince model.provinces
+-- isClanAllowed : EverySet.EverySet Rules.Clans.Clan -> API.Cards.Card -> Bool
+-- isClanAllowed filter card =
+--     case card.clan of
+--         Nothing ->
+--             False
+--         Just clan ->
+--             UI.ClanFilterSelector.isClanAllowed filter clan

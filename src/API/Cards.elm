@@ -2,6 +2,7 @@ module API.Cards exposing (fetchCards)
 
 import Card
 import Clan
+import Debug exposing (toString)
 import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
@@ -41,8 +42,8 @@ card =
 
 
 decoderForCardType : String -> String -> Maybe (Decoder Card.Card)
-decoderForCardType cardType_ cardBack =
-    case ( cardType_, cardBack ) of
+decoderForCardType cardBack cardType =
+    case ( cardType, cardBack ) of
         ( "province", "stronghold" ) ->
             Just strongholdDecoder
 
@@ -68,7 +69,7 @@ decoderForCardType cardType_ cardBack =
             Just dynastyCharacterDecoder
 
         ( "conflict", "character" ) ->
-            Just conflictharacterDecoder
+            Just conflictCharacterDecoder
 
         ( _, _ ) ->
             Nothing
@@ -93,7 +94,7 @@ strongholdDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.StrongholdCard << Card.Stronghold)
+        |> map (Card.StrongholdType << Card.Stronghold)
 
 
 roleDecoder : Decoder Card.Card
@@ -106,7 +107,7 @@ roleDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.RoleCard << Card.Role)
+        |> map (Card.RoleType << Card.Role)
 
 
 provinceDecoder : Decoder Card.Card
@@ -124,7 +125,7 @@ provinceDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.ProvinceCard << Card.Province)
+        |> map (Card.ProvinceType << Card.Province)
 
 
 holdingDecoder : Decoder Card.Card
@@ -141,7 +142,7 @@ holdingDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.HoldingCard << Card.Holding)
+        |> map (Card.HoldingType << Card.Holding)
 
 
 attachmentDecoder : Decoder Card.Card
@@ -161,7 +162,7 @@ attachmentDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.AttachmentCard << Card.Attachment)
+        |> map (Card.AttachmentType << Card.Attachment)
 
 
 dynastyEventDecoder : Decoder Card.Card
@@ -177,7 +178,7 @@ dynastyEventDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.EventCard << Card.DynastyEvent)
+        |> map (Card.EventType << Card.DynastyEvent)
 
 
 conflictEventDecoder : Decoder Card.Card
@@ -194,7 +195,7 @@ conflictEventDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.EventCard << Card.ConflictEvent)
+        |> map (Card.EventType << Card.ConflictEvent)
 
 
 dynastyCharacterDecoder : Decoder Card.Card
@@ -214,11 +215,11 @@ dynastyCharacterDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.CharacterCard << Card.DynastyCharacter)
+        |> map (Card.CharacterType << Card.DynastyCharacter)
 
 
-conflictharacterDecoder : Decoder Card.Card
-conflictharacterDecoder =
+conflictCharacterDecoder : Decoder Card.Card
+conflictCharacterDecoder =
     Decode.succeed Card.ConflictCharacterProps
         |> title
         |> uniqueness
@@ -235,7 +236,7 @@ conflictharacterDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Card.CharacterCard << Card.ConflictCharacter)
+        |> map (Card.CharacterType << Card.ConflictCharacter)
 
 
 
@@ -262,20 +263,26 @@ skill skillType =
 
                 Political ->
                     "political"
-
-        toSkill str =
-            if str == "x" then
-                Decode.succeed Card.XValue
-
-            else
-                case String.toInt str of
-                    Just n ->
-                        Decode.succeed (Card.FixedValue n)
-
-                    Nothing ->
-                        Decode.fail "Invalid skill value"
     in
-    required fieldName (string |> Decode.andThen toSkill)
+    required fieldName (string |> Decode.andThen toNumericalValue)
+
+
+toNumericalValue : String -> Decoder Card.NumericalValue
+toNumericalValue string =
+    case string of
+        "x" ->
+            Decode.succeed Card.XValue
+
+        "X" ->
+            Decode.succeed Card.XValue
+
+        _ ->
+            case String.toInt string of
+                Just n ->
+                    Decode.succeed (Card.FixedValue n)
+
+                Nothing ->
+                    Decode.fail "Invalid numerical value"
 
 
 skillBonus : SkillType -> Decoder (Card.NumericalModifier -> b) -> Decoder b
@@ -413,9 +420,9 @@ bonusStrength =
     required "strength_bonus" modifier
 
 
-strength : Decoder (Int -> b) -> Decoder b
+strength : Decoder (Card.NumericalValue -> b) -> Decoder b
 strength =
-    required "strength" modifier
+    required "strength" (string |> Decode.andThen toNumericalValue)
 
 
 traits : Decoder (List String -> b) -> Decoder b
@@ -456,9 +463,9 @@ cycle =
     required "pack_cards" <| index 0 (field "pack" (field "id" string))
 
 
-cardNumber : Decoder (Int -> b) -> Decoder b
+cardNumber : Decoder (String -> b) -> Decoder b
 cardNumber =
-    required "pack_cards" <| index 0 (field "position" modifier)
+    required "pack_cards" <| index 0 (field "position" string)
 
 
 artist : Decoder (String -> b) -> Decoder b
@@ -505,6 +512,9 @@ clan =
 
                 "unicorn" ->
                     Decode.succeed Clan.Unicorn
+
+                "neutral" ->
+                    Decode.succeed Clan.Neutral
 
                 _ ->
                     Decode.fail "Invalid clan"

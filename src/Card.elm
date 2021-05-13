@@ -59,13 +59,13 @@ type NumericalModifier
 
 
 type Card
-    = AttachmentCard Attachment
-    | CharacterCard Character
-    | EventCard Event
-    | HoldingCard Holding
-    | ProvinceCard Province
-    | RoleCard Role
-    | StrongholdCard Stronghold
+    = AttachmentType Attachment
+    | CharacterType Character
+    | EventType Event
+    | HoldingType Holding
+    | ProvinceType Province
+    | RoleType Role
+    | StrongholdType Stronghold
 
 
 type Stronghold
@@ -104,7 +104,7 @@ type alias RoleProps =
     , abilities : List String
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -120,7 +120,7 @@ type alias StrongholdProps =
     , abilities : List String
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -130,13 +130,13 @@ type alias ProvinceProps =
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
-    , strength : Int
+    , strength : NumericalValue
     , elements : List Element
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -150,7 +150,7 @@ type alias DynastyEventProps =
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -165,7 +165,7 @@ type alias ConflictEventProps =
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -180,7 +180,7 @@ type alias HoldingProps =
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -198,7 +198,7 @@ type alias AttachmentProps =
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -216,7 +216,7 @@ type alias DynastyCharacterProps =
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
 
@@ -235,6 +235,55 @@ type alias ConflictCharacterProps =
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
     , cycle : String
-    , cardNumber : Int
+    , cardNumber : String
     , artist : String
     }
+
+
+
+-- FUNCTIONS
+
+
+title : Card -> String
+title card =
+    case card of
+        StrongholdType cardType ->
+            case cardType of
+                Stronghold props ->
+                    props.title
+
+        RoleType cardType ->
+            case cardType of
+                Role props ->
+                    props.title
+
+        ProvinceType cardType ->
+            case cardType of
+                Province props ->
+                    props.title
+
+        AttachmentType cardType ->
+            case cardType of
+                Attachment props ->
+                    props.title
+
+        HoldingType cardType ->
+            case cardType of
+                Holding props ->
+                    props.title
+
+        CharacterType cardType ->
+            case cardType of
+                ConflictCharacter props ->
+                    props.title
+
+                DynastyCharacter props ->
+                    props.title
+
+        EventType cardType ->
+            case cardType of
+                ConflictEvent props ->
+                    props.title
+
+                DynastyEvent props ->
+                    props.title
