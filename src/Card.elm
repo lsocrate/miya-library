@@ -1,4 +1,8 @@
-module Cards exposing (..)
+module Card exposing (..)
+
+import Format exposing (Format)
+
+
 
 -- UNIQUE
 
@@ -66,22 +70,6 @@ type RoleTypes
 
 
 
--- FORMATS
-
-
-type Format
-    = Stronghold RL
-    | Skirmish
-    | Enlightenment
-    | Draft
-
-
-type RL
-    = Imperial
-    | Jade
-
-
-
 -- ELEMENTS
 
 
@@ -112,59 +100,47 @@ type NumericalModifier
 -- CARDS
 
 
-type ACard
-    = AStronghold BStronghold
-    | ARole BRole
-    | AProvince BProvince
-    | AChar BCharacter
-    | AEvent BEvent
-    | AAttachment BAttachment
-    | AHolding BHolding
-
-
-type BStronghold
-    = BStronghold StrongholdProperties
-
-
-type BRole
-    = BRole RoleProperties
-
-
-type BProvince
-    = BProvince ProvinceProperties
-
-
-type BCharacter
-    = BDynChar DynastyCharacterProperties
-    | BConfChar ConflictCharacterPropperties
-
-
-type BEvent
-    = BDynEvent DynastyEventProperties
-    | BConfEvent ConflictEventProperties
-
-
-type BAttachment
-    = BAttachment ConflictAttachmentProperties
-
-
-type BHolding
-    = BHolding DynastyHoldingPropperties
-
-
 type Card
-    = RoleCard RoleProperties
-    | StrongholdCard StrongholdProperties
-    | ProvinceCard ProvinceProperties
-    | DynastyHolding DynastyHoldingPropperties
-    | DynastyEvent DynastyEventProperties
-    | ConflictEvent ConflictEventProperties
-    | DynastyCharacter DynastyCharacterProperties
-    | ConflictCharacter ConflictCharacterPropperties
-    | ConflictAttachment ConflictAttachmentProperties
+    = AttachmentCard Attachment
+    | CharacterCard Character
+    | EventCard Event
+    | HoldingCard Holding
+    | ProvinceCard Province
+    | RoleCard Role
+    | StrongholdCard Stronghold
 
 
-type alias RoleProperties =
+type Stronghold
+    = Stronghold StrongholdProps
+
+
+type Role
+    = Role RoleProps
+
+
+type Province
+    = Province ProvinceProps
+
+
+type Attachment
+    = Attachment AttachmentProps
+
+
+type Holding
+    = Holding HoldingProps
+
+
+type Character
+    = DynastyCharacter DynastyCharacterProps
+    | ConflictCharacter ConflictCharacterProps
+
+
+type Event
+    = DynastyEvent DynastyEventProps
+    | ConflictEvent ConflictEventProps
+
+
+type alias RoleProps =
     { title : String
     , traits : List RoleTypes
     , abilities : List String
@@ -175,7 +151,7 @@ type alias RoleProperties =
     }
 
 
-type alias StrongholdProperties =
+type alias StrongholdProps =
     { title : String
     , clan : Clan
     , traits : List String
@@ -191,7 +167,7 @@ type alias StrongholdProperties =
     }
 
 
-type alias ProvinceProperties =
+type alias ProvinceProps =
     { title : String
     , uniqueness : Uniqueness
     , clan : Clan
@@ -207,7 +183,7 @@ type alias ProvinceProperties =
     }
 
 
-type alias DynastyEventProperties =
+type alias DynastyEventProps =
     { title : String
     , clan : Clan
     , traits : List String
@@ -221,7 +197,7 @@ type alias DynastyEventProperties =
     }
 
 
-type alias ConflictEventProperties =
+type alias ConflictEventProps =
     { title : String
     , clan : Clan
     , traits : List String
@@ -236,7 +212,7 @@ type alias ConflictEventProperties =
     }
 
 
-type alias DynastyHoldingPropperties =
+type alias HoldingProps =
     { title : String
     , uniqueness : Uniqueness
     , clan : Clan
@@ -251,7 +227,7 @@ type alias DynastyHoldingPropperties =
     }
 
 
-type alias ConflictAttachmentProperties =
+type alias AttachmentProps =
     { title : String
     , uniqueness : Uniqueness
     , clan : Clan
@@ -269,7 +245,7 @@ type alias ConflictAttachmentProperties =
     }
 
 
-type alias DynastyCharacterProperties =
+type alias DynastyCharacterProps =
     { title : String
     , uniqueness : Uniqueness
     , clan : Clan
@@ -287,7 +263,7 @@ type alias DynastyCharacterProperties =
     }
 
 
-type alias ConflictCharacterPropperties =
+type alias ConflictCharacterProps =
     { title : String
     , uniqueness : Uniqueness
     , clan : Clan

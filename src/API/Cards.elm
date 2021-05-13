@@ -1,6 +1,7 @@
 module API.Cards exposing (fetchCards)
 
-import Cards
+import Card
+import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
@@ -8,7 +9,7 @@ import List
 import String
 
 
-fetchCards : (Result Http.Error (List Cards.ACard) -> msg) -> Cmd msg
+fetchCards : (Result Http.Error (List Card.Card) -> msg) -> Cmd msg
 fetchCards msg =
     Http.get
         { url = "https://api.fiveringsdb.com/cards"
@@ -16,12 +17,12 @@ fetchCards msg =
         }
 
 
-cardsDecoder : Decoder (List Cards.ACard)
+cardsDecoder : Decoder (List Card.Card)
 cardsDecoder =
     field "records" (list card) |> map (List.filterMap identity)
 
 
-card : Decoder (Maybe Cards.ACard)
+card : Decoder (Maybe Card.Card)
 card =
     let
         decodeCard decoder =
@@ -38,7 +39,7 @@ card =
         |> Decode.andThen decodeCard
 
 
-decoderForCardType : String -> String -> Maybe (Decoder Cards.ACard)
+decoderForCardType : String -> String -> Maybe (Decoder Card.Card)
 decoderForCardType cardType_ cardBack =
     case ( cardType_, cardBack ) of
         ( "province", "stronghold" ) ->
@@ -76,9 +77,9 @@ decoderForCardType cardType_ cardBack =
 -- CARD TYPE DECODERS
 
 
-strongholdDecoder : Decoder Cards.ACard
+strongholdDecoder : Decoder Card.Card
 strongholdDecoder =
-    Decode.succeed Cards.StrongholdProperties
+    Decode.succeed Card.StrongholdProps
         |> title
         |> clan
         |> traits
@@ -91,12 +92,12 @@ strongholdDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AStronghold << Cards.BStronghold)
+        |> map (Card.StrongholdCard << Card.Stronghold)
 
 
-roleDecoder : Decoder Cards.ACard
+roleDecoder : Decoder Card.Card
 roleDecoder =
-    Decode.succeed Cards.RoleProperties
+    Decode.succeed Card.RoleProps
         |> title
         |> roleTraits
         |> abilities
@@ -104,12 +105,12 @@ roleDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.ARole << Cards.BRole)
+        |> map (Card.RoleCard << Card.Role)
 
 
-provinceDecoder : Decoder Cards.ACard
+provinceDecoder : Decoder Card.Card
 provinceDecoder =
-    Decode.succeed Cards.ProvinceProperties
+    Decode.succeed Card.ProvinceProps
         |> title
         |> uniqueness
         |> clan
@@ -122,12 +123,12 @@ provinceDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AProvince << Cards.BProvince)
+        |> map (Card.ProvinceCard << Card.Province)
 
 
-holdingDecoder : Decoder Cards.ACard
+holdingDecoder : Decoder Card.Card
 holdingDecoder =
-    Decode.succeed Cards.DynastyHoldingPropperties
+    Decode.succeed Card.HoldingProps
         |> title
         |> uniqueness
         |> clan
@@ -139,12 +140,12 @@ holdingDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AHolding << Cards.BHolding)
+        |> map (Card.HoldingCard << Card.Holding)
 
 
-attachmentDecoder : Decoder Cards.ACard
+attachmentDecoder : Decoder Card.Card
 attachmentDecoder =
-    Decode.succeed Cards.ConflictAttachmentProperties
+    Decode.succeed Card.AttachmentProps
         |> title
         |> uniqueness
         |> clan
@@ -159,12 +160,12 @@ attachmentDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AAttachment << Cards.BAttachment)
+        |> map (Card.AttachmentCard << Card.Attachment)
 
 
-dynastyEventDecoder : Decoder Cards.ACard
+dynastyEventDecoder : Decoder Card.Card
 dynastyEventDecoder =
-    Decode.succeed Cards.DynastyEventProperties
+    Decode.succeed Card.DynastyEventProps
         |> title
         |> clan
         |> traits
@@ -175,12 +176,12 @@ dynastyEventDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AEvent << Cards.BDynEvent)
+        |> map (Card.EventCard << Card.DynastyEvent)
 
 
-conflictEventDecoder : Decoder Cards.ACard
+conflictEventDecoder : Decoder Card.Card
 conflictEventDecoder =
-    Decode.succeed Cards.ConflictEventProperties
+    Decode.succeed Card.ConflictEventProps
         |> title
         |> clan
         |> traits
@@ -192,12 +193,12 @@ conflictEventDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AEvent << Cards.BConfEvent)
+        |> map (Card.EventCard << Card.ConflictEvent)
 
 
-dynastyCharacterDecoder : Decoder Cards.ACard
+dynastyCharacterDecoder : Decoder Card.Card
 dynastyCharacterDecoder =
-    Decode.succeed Cards.DynastyCharacterProperties
+    Decode.succeed Card.DynastyCharacterProps
         |> title
         |> uniqueness
         |> clan
@@ -212,12 +213,12 @@ dynastyCharacterDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AChar << Cards.BDynChar)
+        |> map (Card.CharacterCard << Card.DynastyCharacter)
 
 
-conflictharacterDecoder : Decoder Cards.ACard
+conflictharacterDecoder : Decoder Card.Card
 conflictharacterDecoder =
-    Decode.succeed Cards.ConflictCharacterPropperties
+    Decode.succeed Card.ConflictCharacterProps
         |> title
         |> uniqueness
         |> clan
@@ -233,7 +234,7 @@ conflictharacterDecoder =
         |> cycle
         |> cardNumber
         |> artist
-        |> map (Cards.AChar << Cards.BConfChar)
+        |> map (Card.CharacterCard << Card.ConflictCharacter)
 
 
 
@@ -250,7 +251,7 @@ type SkillType
     | Political
 
 
-skill : SkillType -> Decoder (Cards.NumericalValue -> b) -> Decoder b
+skill : SkillType -> Decoder (Card.NumericalValue -> b) -> Decoder b
 skill skillType =
     let
         fieldName =
@@ -263,12 +264,12 @@ skill skillType =
 
         toSkill str =
             if str == "x" then
-                Decode.succeed Cards.XValue
+                Decode.succeed Card.XValue
 
             else
                 case String.toInt str of
                     Just n ->
-                        Decode.succeed (Cards.FixedValue n)
+                        Decode.succeed (Card.FixedValue n)
 
                     Nothing ->
                         Decode.fail "Invalid skill value"
@@ -276,7 +277,7 @@ skill skillType =
     required fieldName (string |> Decode.andThen toSkill)
 
 
-skillBonus : SkillType -> Decoder (Cards.NumericalModifier -> b) -> Decoder b
+skillBonus : SkillType -> Decoder (Card.NumericalModifier -> b) -> Decoder b
 skillBonus skillType =
     let
         fieldName =
@@ -289,12 +290,12 @@ skillBonus skillType =
 
         toSkillModifier str =
             if str == "x" then
-                Decode.succeed Cards.XModifier
+                Decode.succeed Card.XModifier
 
             else
                 case String.toInt str of
                     Just n ->
-                        Decode.succeed (Cards.FixedModifier n)
+                        Decode.succeed (Card.FixedModifier n)
 
                     Nothing ->
                         Decode.fail "Invalid cost"
@@ -302,22 +303,22 @@ skillBonus skillType =
     required fieldName (string |> Decode.andThen toSkillModifier)
 
 
-cost : Decoder (Cards.NumericalValue -> b) -> Decoder b
+cost : Decoder (Card.NumericalValue -> b) -> Decoder b
 cost =
     let
         toCost str =
             if str == "x" then
-                Decode.succeed Cards.XValue
+                Decode.succeed Card.XValue
 
             else
                 case String.toInt str of
                     Just n ->
-                        Decode.succeed (Cards.FixedValue n)
+                        Decode.succeed (Card.FixedValue n)
 
                     Nothing ->
                         Decode.fail "Invalid cost"
     in
-    optional "cost" (string |> Decode.andThen toCost) Cards.DashValue
+    optional "cost" (string |> Decode.andThen toCost) Card.DashValue
 
 
 influenceCost : Decoder (Maybe Int -> b) -> Decoder b
@@ -325,7 +326,7 @@ influenceCost =
     optional "influence_cost" (maybe int) Nothing
 
 
-roleRequirement : Decoder (Maybe Cards.RoleTypes -> b) -> Decoder b
+roleRequirement : Decoder (Maybe Card.RoleTypes -> b) -> Decoder b
 roleRequirement =
     let
         toRoleRequirement =
@@ -334,25 +335,25 @@ roleRequirement =
                     (\str ->
                         case str of
                             "keeper" ->
-                                Decode.succeed (Just Cards.KeeperRole)
+                                Decode.succeed (Just Card.KeeperRole)
 
                             "seeker" ->
-                                Decode.succeed (Just Cards.SeekerRole)
+                                Decode.succeed (Just Card.SeekerRole)
 
                             "air" ->
-                                Decode.succeed (Just Cards.AirRole)
+                                Decode.succeed (Just Card.AirRole)
 
                             "earth" ->
-                                Decode.succeed (Just Cards.EarthRole)
+                                Decode.succeed (Just Card.EarthRole)
 
                             "fire" ->
-                                Decode.succeed (Just Cards.FireRole)
+                                Decode.succeed (Just Card.FireRole)
 
                             "void" ->
-                                Decode.succeed (Just Cards.VoidRole)
+                                Decode.succeed (Just Card.VoidRole)
 
                             "water" ->
-                                Decode.succeed (Just Cards.WaterRole)
+                                Decode.succeed (Just Card.WaterRole)
 
                             _ ->
                                 Decode.fail "Invalid role restriction"
@@ -361,7 +362,7 @@ roleRequirement =
     optional "role_restriction" toRoleRequirement Nothing
 
 
-elements : Decoder (List Cards.Element -> b) -> Decoder b
+elements : Decoder (List Card.Element -> b) -> Decoder b
 elements =
     let
         element =
@@ -370,19 +371,19 @@ elements =
                     (\str ->
                         case str of
                             "air" ->
-                                Decode.succeed Cards.Air
+                                Decode.succeed Card.Air
 
                             "earth" ->
-                                Decode.succeed Cards.Earth
+                                Decode.succeed Card.Earth
 
                             "fire" ->
-                                Decode.succeed Cards.Fire
+                                Decode.succeed Card.Fire
 
                             "void" ->
-                                Decode.succeed Cards.Void
+                                Decode.succeed Card.Void
 
                             "water" ->
-                                Decode.succeed Cards.Water
+                                Decode.succeed Card.Water
 
                             _ ->
                                 Decode.fail "Invalid element"
@@ -431,20 +432,20 @@ abilities =
     required "text_canonical" <| map (String.split "\n") string
 
 
-formatRequirement : Decoder (Maybe Cards.Format -> b) -> Decoder b
+formatRequirement : Decoder (Maybe Format.Format -> b) -> Decoder b
 formatRequirement =
     required "text_canonical" <| map (always Nothing) string
 
 
-uniqueness : Decoder (Cards.Uniqueness -> b) -> Decoder b
+uniqueness : Decoder (Card.Uniqueness -> b) -> Decoder b
 uniqueness =
     let
         toUnique isUnique =
             if isUnique then
-                Cards.Unique
+                Card.Unique
 
             else
-                Cards.NonUnique
+                Card.NonUnique
     in
     required "unicity" <| map toUnique bool
 
@@ -478,31 +479,31 @@ modifier =
     string |> Decode.andThen decodeModifier
 
 
-clan : Decoder (Cards.Clan -> b) -> Decoder b
+clan : Decoder (Card.Clan -> b) -> Decoder b
 clan =
     let
         decodeClan str =
             case str of
                 "crab" ->
-                    Decode.succeed Cards.Crab
+                    Decode.succeed Card.Crab
 
                 "crane" ->
-                    Decode.succeed Cards.Crane
+                    Decode.succeed Card.Crane
 
                 "dragon" ->
-                    Decode.succeed Cards.Dragon
+                    Decode.succeed Card.Dragon
 
                 "lion" ->
-                    Decode.succeed Cards.Lion
+                    Decode.succeed Card.Lion
 
                 "phoenix" ->
-                    Decode.succeed Cards.Phoenix
+                    Decode.succeed Card.Phoenix
 
                 "scorpion" ->
-                    Decode.succeed Cards.Scorpion
+                    Decode.succeed Card.Scorpion
 
                 "unicorn" ->
-                    Decode.succeed Cards.Unicorn
+                    Decode.succeed Card.Unicorn
 
                 _ ->
                     Decode.fail "Invalid clan"
@@ -510,31 +511,31 @@ clan =
     required "clan" <| (string |> Decode.andThen decodeClan)
 
 
-roleTraits : Decoder (List Cards.RoleTypes -> b) -> Decoder b
+roleTraits : Decoder (List Card.RoleTypes -> b) -> Decoder b
 roleTraits =
     let
         toRoleTrait string =
             case string of
                 "keeper" ->
-                    Just Cards.KeeperRole
+                    Just Card.KeeperRole
 
                 "seeker" ->
-                    Just Cards.SeekerRole
+                    Just Card.SeekerRole
 
                 "air" ->
-                    Just Cards.AirRole
+                    Just Card.AirRole
 
                 "earth" ->
-                    Just Cards.EarthRole
+                    Just Card.EarthRole
 
                 "fire" ->
-                    Just Cards.FireRole
+                    Just Card.FireRole
 
                 "void" ->
-                    Just Cards.VoidRole
+                    Just Card.VoidRole
 
                 "water" ->
-                    Just Cards.WaterRole
+                    Just Card.WaterRole
 
                 _ ->
                     Nothing

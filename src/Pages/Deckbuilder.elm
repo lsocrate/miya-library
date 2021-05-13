@@ -1,7 +1,7 @@
 module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import API.Cards
-import Cards as Cards exposing (Clan(..), clanName)
+import Card as Cards exposing (Clan(..), clanName)
 import Components.Header
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
@@ -51,7 +51,7 @@ type Model
 
 init : ( Model, Cmd Msg )
 init =
-    ( Loading, API.Cards.fetchCards FetchedCards )
+    ( Loading, API.Card.fetchCards FetchedCards )
 
 
 
@@ -70,7 +70,7 @@ update msg model =
         ( Loading, FetchedCards result ) ->
             case result of
                 Ok allCardsData ->
-                    ( ChoosingStronghold allCardsData, Cmd.none )
+                    ( ChoosingStronghold allCardData, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -120,7 +120,7 @@ isStronghold : API.Cards.Card -> Bool
 isStronghold card =
     case card.cardType of
         Just cardType ->
-            cardType == Cards.Stronghold
+            cardType == Cards.StrongholdFormat
 
         _ ->
             False
@@ -149,7 +149,7 @@ viewDeckbuild model =
         [ viewDeck model
         , aside []
             [ viewFilters model
-            , viewCardsOptions model
+            , viewCardOptions model
             ]
         ]
 
@@ -171,7 +171,7 @@ viewCardsOptions model =
         Just allCardsData ->
             let
                 filteredCards =
-                    List.filter (isClanAllowed model.filterClan) allCardsData
+                    List.filter (isClanAllowed model.filterClan) allCardData
             in
             div [ class "cards" ]
                 [ p [] [ text "Cards" ]
@@ -188,10 +188,10 @@ viewDeck : Model -> Html Msg
 viewDeck model =
     let
         ( dynastyDeck, other ) =
-            List.partition (Tuple.first >> Cards.hasBack Cards.Dynasty) model.deckCards
+            List.partition (Tuple.first >> Card.hasBack Cards.Dynasty) model.deckCards
 
         ( conflictDeck, _ ) =
-            List.partition (Tuple.first >> Cards.hasBack Cards.Conflict) other
+            List.partition (Tuple.first >> Card.hasBack Cards.Conflict) other
     in
     main_ [ class "decklist", id "decklist" ]
         [ div [ class "decklist-deck_name" ] (viewDeckName model)
