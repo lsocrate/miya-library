@@ -1,8 +1,8 @@
 module Pages.Home_ exposing (view)
 
-import Components.Header
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import UI.Header
 import View exposing (View)
 
 
@@ -10,7 +10,7 @@ view : View msg
 view =
     { title = "Miya Library"
     , body =
-        [ Components.Header.view
+        [ UI.Header.view
         , text "Hello, world!"
         ]
     }

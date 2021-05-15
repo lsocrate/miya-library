@@ -3,7 +3,6 @@ module Pages.Deckbuilder exposing (Model, Msg, page)
 import API.Cards
 import Card
 import Clan exposing (Clan(..))
-import Components.Header
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Html exposing (..)
@@ -15,6 +14,7 @@ import Request
 import Shared
 import String
 import UI.ClanFilterSelector
+import UI.Header
 import Url exposing (Protocol(..))
 import View exposing (View)
 
@@ -128,7 +128,7 @@ view model =
     in
     { title = "Deckbuilder"
     , body =
-        [ Components.Header.view
+        [ UI.Header.view
         , viewForStep
         ]
     }
@@ -242,11 +242,18 @@ viewCardsOptions : List Card.Card -> Deck -> Filters -> Html Msg
 viewCardsOptions cards _ filters =
     let
         filteredCards =
-            List.filter (isClanAllowed filters.byClan) cards
+            List.filter (Card.clan >> UI.ClanFilterSelector.isClanAllowed filters.byClan) cards
+
+        cardRow card =
+            li []
+                [ p []
+                    [ text (Card.title card)
+                    ]
+                ]
     in
     div [ class "cards" ]
         [ p [] [ text "Cards" ]
-        , ul [] (List.map viewCardRow filteredCards)
+        , ul [] (List.map cardRow filteredCards)
         ]
 
 
@@ -257,15 +264,6 @@ isClanAllowed filter _ =
             Clan.Crab
     in
     UI.ClanFilterSelector.isClanAllowed filter clan
-
-
-viewCardRow : Card.Card -> Html Msg
-viewCardRow card =
-    li []
-        [ p []
-            [ text (Card.title card)
-            ]
-        ]
 
 
 viewRole : Deck -> List (Html Msg)

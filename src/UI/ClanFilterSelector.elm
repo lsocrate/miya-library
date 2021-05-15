@@ -21,7 +21,7 @@ view : Model -> (Model -> msg) -> Html msg
 view filters changeMsg =
     let
         options =
-            [ Crab, Crane, Dragon, Lion, Phoenix, Scorpion, Unicorn, Neutral ]
+            [ Crab, Crane, Dragon, Lion, Phoenix, Scorpion, Unicorn, Neutral, Shadowlands ]
 
         selector clan =
             li [ class "clanfilter-item" ]

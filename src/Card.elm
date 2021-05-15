@@ -282,3 +282,46 @@ title card =
 
                 DynastyEvent props ->
                     props.title
+
+
+clan : Card -> Clan.Clan
+clan card =
+    case card of
+        RoleType _ ->
+            Clan.Neutral
+
+        StrongholdType cardType ->
+            case cardType of
+                Stronghold props ->
+                    props.clan
+
+        AttachmentType cardType ->
+            case cardType of
+                Attachment props ->
+                    props.clan
+
+        CharacterType cardType ->
+            case cardType of
+                ConflictCharacter props ->
+                    props.clan
+
+                DynastyCharacter props ->
+                    props.clan
+
+        EventType cardType ->
+            case cardType of
+                ConflictEvent props ->
+                    props.clan
+
+                DynastyEvent props ->
+                    props.clan
+
+        HoldingType cardType ->
+            case cardType of
+                Holding props ->
+                    props.clan
+
+        ProvinceType cardType ->
+            case cardType of
+                Province props ->
+                    props.clan

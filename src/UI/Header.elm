@@ -1,4 +1,4 @@
-module Components.Header exposing (..)
+module UI.Header exposing (..)
 
 import Gen.Route as Route
 import Html exposing (..)
