@@ -12,7 +12,6 @@ import Http exposing (Error)
 import Page
 import Request
 import Shared
-import String
 import UI.ClanFilterSelector
 import UI.Header
 import Url exposing (Protocol(..))
@@ -38,6 +37,7 @@ type alias Deck =
     { stronghold : Card.Stronghold
     , name : Maybe String
     , role : Maybe Card.Role
+    , cards : List ( Card.Card, Int )
     }
 
 
@@ -62,6 +62,7 @@ type Msg
     | StrongholdSelected Card.Stronghold
     | StrongholdReset
     | ClanFilterChanged UI.ClanFilterSelector.Model
+    | CardCountInDeckChange Card.Card Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -79,7 +80,7 @@ update msg model =
             ( Deckbuilding
                 { allCards = allCards
                 , filters = { byClan = UI.ClanFilterSelector.init }
-                , deck = Maybe.withDefault { stronghold = stronghold, name = Nothing, role = Nothing } oldDeck
+                , deck = Maybe.withDefault { stronghold = stronghold, name = Nothing, role = Nothing, cards = [] } oldDeck
                 }
             , Cmd.none
             )
@@ -96,6 +97,31 @@ update msg model =
                     { filters | byClan = clanFilters }
             in
             ( Deckbuilding { props | filters = newFilters }, Cmd.none )
+
+        ( CardCountInDeckChange card n, Deckbuilding props ) ->
+            let
+                { deck } =
+                    props
+
+                { cards } =
+                    deck
+            in
+            ( Deckbuilding
+                { props
+                    | deck =
+                        { deck
+                            | cards =
+                                List.filter (Tuple.first >> (/=) card) cards
+                                    |> (if n > 0 then
+                                            List.append [ ( card, n ) ]
+
+                                        else
+                                            identity
+                                       )
+                        }
+                }
+            , Cmd.none
+            )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -175,18 +201,46 @@ viewDeckbuilder cards deck filters =
 viewDeck : Deck -> Html Msg
 viewDeck deck =
     let
-        dynastyDeck =
-            []
+        { setup, dynasty, conflict } =
+            List.foldl
+                (\card groups ->
+                    case card of
+                        ( Card.StrongholdType _, _ ) ->
+                            { groups | setup = groups.setup ++ [ card ] }
 
-        conflictDeck =
-            []
+                        ( Card.RoleType _, _ ) ->
+                            { groups | setup = groups.setup ++ [ card ] }
+
+                        ( Card.ProvinceType _, _ ) ->
+                            { groups | setup = groups.setup ++ [ card ] }
+
+                        ( Card.HoldingType _, _ ) ->
+                            { groups | dynasty = groups.dynasty ++ [ card ] }
+
+                        ( Card.CharacterType (Card.DynastyCharacter _), _ ) ->
+                            { groups | dynasty = groups.dynasty ++ [ card ] }
+
+                        ( Card.EventType (Card.DynastyEvent _), _ ) ->
+                            { groups | dynasty = groups.dynasty ++ [ card ] }
+
+                        ( Card.CharacterType (Card.ConflictCharacter _), _ ) ->
+                            { groups | conflict = groups.conflict ++ [ card ] }
+
+                        ( Card.EventType (Card.ConflictEvent _), _ ) ->
+                            { groups | conflict = groups.conflict ++ [ card ] }
+
+                        ( Card.AttachmentType _, _ ) ->
+                            { groups | conflict = groups.conflict ++ [ card ] }
+                )
+                { setup = [], dynasty = [], conflict = [] }
+                deck.cards
     in
     main_ [ class "decklist", id "decklist" ]
         [ div [ class "decklist-deck_name" ] (viewDeckName deck)
         , div [ class "decklist-header" ] (viewDeckHeader deck)
         , div [ class "decklist-decks" ]
-            [ div [ class "decklist-deck" ] (viewDeckSide dynastyDeck)
-            , div [ class "decklist-deck" ] (viewDeckSide conflictDeck)
+            [ div [ class "decklist-deck" ] (viewDeckSide dynasty)
+            , div [ class "decklist-deck" ] (viewDeckSide conflict)
             ]
         ]
 
@@ -225,7 +279,7 @@ viewDeckSide : List ( Card.Card, Int ) -> List (Html Msg)
 viewDeckSide cards =
     let
         cardItem ( card, qty ) =
-            li [] [ text (String.fromInt qty), text (Card.title card) ]
+            li [] [ text (String.fromInt qty ++ "x " ++ Card.title card) ]
     in
     [ ul [] (List.map cardItem cards) ]
 
@@ -239,14 +293,30 @@ viewFilters filters =
 
 
 viewCardsOptions : List Card.Card -> Deck -> Filters -> Html Msg
-viewCardsOptions cards _ filters =
+viewCardsOptions cards deck filters =
     let
         filteredCards =
             List.filter (Card.clan >> UI.ClanFilterSelector.isClanAllowed filters.byClan) cards
 
+        cardRow : Card.Card -> Html Msg
         cardRow card =
+            let
+                copiesInDeck =
+                    List.filter (Tuple.first >> (==) card) deck.cards |> List.head |> Maybe.map Tuple.second |> Maybe.withDefault 0
+            in
             li []
-                [ p []
+                [ div []
+                    (List.range 0 3
+                        |> List.map
+                            (\qty ->
+                                div
+                                    [ onClick <| CardCountInDeckChange card qty
+                                    , classList [ ( "abc--active", qty == copiesInDeck ) ]
+                                    ]
+                                    [ text <| String.fromInt qty ]
+                            )
+                    )
+                , div []
                     [ text (Card.title card)
                     ]
                 ]
@@ -255,15 +325,6 @@ viewCardsOptions cards _ filters =
         [ p [] [ text "Cards" ]
         , ul [] (List.map cardRow filteredCards)
         ]
-
-
-isClanAllowed : EverySet.EverySet Clan.Clan -> Card.Card -> Bool
-isClanAllowed filter _ =
-    let
-        clan =
-            Clan.Crab
-    in
-    UI.ClanFilterSelector.isClanAllowed filter clan
 
 
 viewRole : Deck -> List (Html Msg)

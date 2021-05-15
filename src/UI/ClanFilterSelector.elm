@@ -17,20 +17,22 @@ init =
     empty
 
 
+isClanAllowed : Model -> Clan -> Bool
+isClanAllowed filters clan =
+    isEmpty filters || member clan filters
+
+
 view : Model -> (Model -> msg) -> Html msg
 view filters changeMsg =
     let
-        options =
-            [ Crab, Crane, Dragon, Lion, Phoenix, Scorpion, Unicorn, Neutral, Shadowlands ]
-
         selector clan =
             li [ class "clanfilter-item" ]
                 [ button
                     [ classList
                         [ ( "clanfilter-button", True )
-                        , ( "clanfilter-button--active", isActive filters clan )
+                        , ( "clanfilter-button--active", member clan filters )
                         ]
-                    , onClick (changeMsg (toggleFilter filters clan))
+                    , onClick (changeMsg (toggleFilter clan filters))
                     ]
                     [ text (clanName clan) ]
                 ]
@@ -38,24 +40,18 @@ view filters changeMsg =
     ul [ class "clanfilter" ] (List.map selector options)
 
 
-toggleFilter : Model -> Clan -> Model
-toggleFilter filters clan =
-    let
-        update =
-            if member clan filters then
-                remove
-
-            else
-                insert
-    in
-    update clan filters
+options : List Clan
+options =
+    [ Crab, Crane, Dragon, Lion, Phoenix, Scorpion, Unicorn, Neutral, Shadowlands ]
 
 
-isActive : Model -> Clan -> Bool
-isActive filters clan =
-    member clan filters
+toggleFilter : Clan -> Model -> Model
+toggleFilter clan filters =
+    (if member clan filters then
+        remove
 
-
-isClanAllowed : Model -> Clan -> Bool
-isClanAllowed filters clan =
-    isEmpty filters || member clan filters
+     else
+        insert
+    )
+        clan
+        filters

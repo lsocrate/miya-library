@@ -242,46 +242,32 @@ type alias ConflictCharacterProps =
 title : Card -> String
 title card =
     case card of
-        StrongholdType cardType ->
-            case cardType of
-                Stronghold props ->
-                    props.title
+        RoleType (Role props) ->
+            props.title
 
-        RoleType cardType ->
-            case cardType of
-                Role props ->
-                    props.title
+        StrongholdType (Stronghold props) ->
+            props.title
 
-        ProvinceType cardType ->
-            case cardType of
-                Province props ->
-                    props.title
+        AttachmentType (Attachment props) ->
+            props.title
 
-        AttachmentType cardType ->
-            case cardType of
-                Attachment props ->
-                    props.title
+        CharacterType (ConflictCharacter props) ->
+            props.title
 
-        HoldingType cardType ->
-            case cardType of
-                Holding props ->
-                    props.title
+        CharacterType (DynastyCharacter props) ->
+            props.title
 
-        CharacterType cardType ->
-            case cardType of
-                ConflictCharacter props ->
-                    props.title
+        EventType (ConflictEvent props) ->
+            props.title
 
-                DynastyCharacter props ->
-                    props.title
+        EventType (DynastyEvent props) ->
+            props.title
 
-        EventType cardType ->
-            case cardType of
-                ConflictEvent props ->
-                    props.title
+        HoldingType (Holding props) ->
+            props.title
 
-                DynastyEvent props ->
-                    props.title
+        ProvinceType (Province props) ->
+            props.title
 
 
 clan : Card -> Clan.Clan
@@ -290,38 +276,26 @@ clan card =
         RoleType _ ->
             Clan.Neutral
 
-        StrongholdType cardType ->
-            case cardType of
-                Stronghold props ->
-                    props.clan
+        StrongholdType (Stronghold props) ->
+            props.clan
 
-        AttachmentType cardType ->
-            case cardType of
-                Attachment props ->
-                    props.clan
+        AttachmentType (Attachment props) ->
+            props.clan
 
-        CharacterType cardType ->
-            case cardType of
-                ConflictCharacter props ->
-                    props.clan
+        CharacterType (ConflictCharacter props) ->
+            props.clan
 
-                DynastyCharacter props ->
-                    props.clan
+        CharacterType (DynastyCharacter props) ->
+            props.clan
 
-        EventType cardType ->
-            case cardType of
-                ConflictEvent props ->
-                    props.clan
+        EventType (ConflictEvent props) ->
+            props.clan
 
-                DynastyEvent props ->
-                    props.clan
+        EventType (DynastyEvent props) ->
+            props.clan
 
-        HoldingType cardType ->
-            case cardType of
-                Holding props ->
-                    props.clan
+        HoldingType (Holding props) ->
+            props.clan
 
-        ProvinceType cardType ->
-            case cardType of
-                Province props ->
-                    props.clan
+        ProvinceType (Province props) ->
+            props.clan
