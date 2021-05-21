@@ -5,25 +5,27 @@ import Card
 import Clan exposing (Clan(..))
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
+import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onCheck, onClick)
 import Http exposing (Error)
 import Page
 import Request
+import Result exposing (fromMaybe)
 import Shared
 import UI.ClanFilterSelector
-import UI.Header
+import UI.Page
 import Url exposing (Protocol(..))
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ _ =
+page _ req =
     Page.element
         { init = init
         , update = update
-        , view = view
+        , view = view req.route
         , subscriptions = subscriptions
         }
 
@@ -80,7 +82,14 @@ update msg model =
             ( Deckbuilding
                 { allCards = allCards
                 , filters = { byClan = UI.ClanFilterSelector.init }
-                , deck = Maybe.withDefault { stronghold = stronghold, name = Nothing, role = Nothing, cards = [] } oldDeck
+                , deck =
+                    Maybe.withDefault
+                        { stronghold = stronghold
+                        , name = Nothing
+                        , role = Nothing
+                        , cards = []
+                        }
+                        oldDeck
                 }
             , Cmd.none
             )
@@ -127,10 +136,10 @@ update msg model =
             ( model, Cmd.none )
 
 
-view : Model -> View Msg
-view model =
+view : Route -> Model -> View Msg
+view route model =
     let
-        onlyStronghold card =
+        isStronghold card =
             case card of
                 Card.StrongholdType stronghold ->
                     Just stronghold
@@ -138,26 +147,21 @@ view model =
                 _ ->
                     Nothing
 
-        viewForStep =
+        viewsForStep =
             case model of
                 Loading ->
-                    viewLoading
+                    [ viewLoading ]
 
                 Error ->
-                    viewError
+                    [ viewError ]
 
                 ChoosingStronghold { allCards } ->
-                    viewStrongholdSelector <| List.filterMap onlyStronghold allCards
+                    List.singleton <| viewStrongholdSelector <| List.filterMap isStronghold allCards
 
                 Deckbuilding { allCards, deck, filters } ->
-                    viewDeckbuilder allCards deck filters
+                    List.singleton <| viewDeckbuilder allCards deck filters
     in
-    { title = "Deckbuilder"
-    , body =
-        [ UI.Header.view
-        , viewForStep
-        ]
-    }
+    UI.Page.view route viewsForStep
 
 
 viewError : Html Msg
@@ -189,7 +193,7 @@ viewStrongholdSelector strongholds =
 
 viewDeckbuilder : List Card.Card -> Deck -> Filters -> Html Msg
 viewDeckbuilder cards deck filters =
-    div []
+    div [ class "deckbuilder" ]
         [ viewDeck deck
         , aside []
             [ viewFilters filters
@@ -304,26 +308,34 @@ viewCardsOptions cards deck filters =
                 copiesInDeck =
                     List.filter (Tuple.first >> (==) card) deck.cards |> List.head |> Maybe.map Tuple.second |> Maybe.withDefault 0
             in
-            li []
-                [ div []
+            li [ class "buildercards-row" ]
+                [ div [ class "buildercards-quantity_picker" ]
                     (List.range 0 3
                         |> List.map
                             (\qty ->
-                                div
-                                    [ onClick <| CardCountInDeckChange card qty
-                                    , classList [ ( "abc--active", qty == copiesInDeck ) ]
+                                label []
+                                    [ text <| String.fromInt qty
+                                    , input
+                                        [ type_ "radio"
+                                        , name <| Card.title card
+                                        , onClick <| CardCountInDeckChange card qty
+                                        , classList
+                                            [ ( "buildercards-quantity_option", True )
+                                            , ( "buildercards-quantity_option--active", qty == copiesInDeck )
+                                            ]
+                                        ]
+                                        []
                                     ]
-                                    [ text <| String.fromInt qty ]
                             )
                     )
-                , div []
+                , div [ class "buildercards-card" ]
                     [ text (Card.title card)
                     ]
                 ]
     in
     div [ class "cards" ]
         [ p [] [ text "Cards" ]
-        , ul [] (List.map cardRow filteredCards)
+        , ul [ class "buildercards-card_rows" ] (List.map cardRow filteredCards)
         ]
 
 

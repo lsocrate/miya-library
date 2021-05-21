@@ -19,5 +19,8 @@
     "sass": "^1.32.12",
     "stylelint": "^13.13.1",
     "stylelint-config-sass-guidelines": "^8.0.0"
+  },
+  "dependencies": {
+    "normalize.css": "^8.0.1"
   }
 }

@@ -1,12 +1,22 @@
 .clanfilter {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: flex-start;
+  margin: 0;
+  padding: 0;
 }
 
 .clanfilter-item {
+  display: block;
+  flex: 0 0 auto;
+  width: 100px;
 }
 
 .clanfilter-button {
   background: #fff;
   color: #000;
+  cursor: pointer;
+  width: 100px;
 }
 
 .clanfilter-button--active {

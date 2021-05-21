@@ -1,0 +1,53 @@
+@import "../vars";
+
+body {
+  align-content: stretch;
+  background-color: $miya-muted-1-rgba;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 80px auto 160px;
+  justify-content: stretch;
+  min-height: 100vh;
+}
+
+.page-header {
+  background-color: $miya-dark-2-rgba;
+  display: flex;
+  grid-column: 1 / 13;
+  grid-row: 1 / 2;
+}
+
+.header-logo {
+  flex: 0 0 200px;
+}
+
+.nav {
+  flex: 1 1 auto;
+}
+
+.nav-list {
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  display: inline-block;
+
+  a {
+    color: #000;
+    text-decoration: underline 2px $miya-muted-5-rgba;
+  }
+}
+
+.page-main {
+  background-color: $miya-dark-3-rgba;
+  grid-column: 1 / 13;
+  grid-row: 2 / 3;
+}
+
+.page-footer {
+  background-color: $miya-dark-4-rgba;
+  grid-column: 1/13;
+  grid-row: 3 / 4;
+}
