@@ -3,6 +3,7 @@ module Pages.Deckbuilder exposing (Model, Msg, page)
 import API.Cards
 import Card
 import Clan exposing (Clan(..))
+import Dict
 import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Gen.Route exposing (Route)
@@ -60,7 +61,7 @@ init =
 
 
 type Msg
-    = FetchedCards (Result Http.Error (List Card.Card))
+    = FetchedCards (Result Http.Error (Dict.Dict String Card.Card))
     | StrongholdSelected Card.Stronghold
     | StrongholdReset
     | ClanFilterChanged UI.ClanFilterSelector.Model
@@ -73,7 +74,7 @@ update msg model =
         ( FetchedCards result, Loading ) ->
             case result of
                 Ok cards ->
-                    ( ChoosingStronghold { allCards = cards, oldDeck = Nothing }, Cmd.none )
+                    ( ChoosingStronghold { allCards = Dict.values cards, oldDeck = Nothing }, Cmd.none )
 
                 Err _ ->
                     ( Error, Cmd.none )

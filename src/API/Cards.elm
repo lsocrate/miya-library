@@ -2,6 +2,7 @@ module API.Cards exposing (fetchCards)
 
 import Card
 import Clan
+import Dict
 import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
@@ -10,7 +11,7 @@ import List
 import String
 
 
-fetchCards : (Result Http.Error (List Card.Card) -> msg) -> Cmd msg
+fetchCards : (Result Http.Error (Dict.Dict String Card.Card) -> msg) -> Cmd msg
 fetchCards msg =
     Http.get
         { url = "https://api.fiveringsdb.com/cards"
@@ -18,9 +19,16 @@ fetchCards msg =
         }
 
 
-cardsDecoder : Decoder (List Card.Card)
+cardsDecoder : Decoder (Dict.Dict String Card.Card)
 cardsDecoder =
-    field "records" (list card) |> map (List.filterMap identity)
+    field "records" (list card)
+        |> map (List.filterMap <| Maybe.map toCardIdTuple)
+        |> map Dict.fromList
+
+
+toCardIdTuple : Card.Card -> ( String, Card.Card )
+toCardIdTuple c =
+    ( Card.id c, c )
 
 
 card : Decoder (Maybe Card.Card)
@@ -81,6 +89,7 @@ decoderForCardType cardBack cardType =
 strongholdDecoder : Decoder Card.Card
 strongholdDecoder =
     Decode.succeed Card.StrongholdProps
+        |> id
         |> title
         |> clan
         |> traits
@@ -99,6 +108,7 @@ strongholdDecoder =
 roleDecoder : Decoder Card.Card
 roleDecoder =
     Decode.succeed Card.RoleProps
+        |> id
         |> title
         |> roleTraits
         |> abilities
@@ -112,6 +122,7 @@ roleDecoder =
 provinceDecoder : Decoder Card.Card
 provinceDecoder =
     Decode.succeed Card.ProvinceProps
+        |> id
         |> title
         |> uniqueness
         |> clan
@@ -130,6 +141,7 @@ provinceDecoder =
 holdingDecoder : Decoder Card.Card
 holdingDecoder =
     Decode.succeed Card.HoldingProps
+        |> id
         |> title
         |> uniqueness
         |> clan
@@ -147,6 +159,7 @@ holdingDecoder =
 attachmentDecoder : Decoder Card.Card
 attachmentDecoder =
     Decode.succeed Card.AttachmentProps
+        |> id
         |> title
         |> uniqueness
         |> clan
@@ -167,6 +180,7 @@ attachmentDecoder =
 dynastyEventDecoder : Decoder Card.Card
 dynastyEventDecoder =
     Decode.succeed Card.DynastyEventProps
+        |> id
         |> title
         |> clan
         |> traits
@@ -183,6 +197,7 @@ dynastyEventDecoder =
 conflictEventDecoder : Decoder Card.Card
 conflictEventDecoder =
     Decode.succeed Card.ConflictEventProps
+        |> id
         |> title
         |> clan
         |> traits
@@ -200,6 +215,7 @@ conflictEventDecoder =
 dynastyCharacterDecoder : Decoder Card.Card
 dynastyCharacterDecoder =
     Decode.succeed Card.DynastyCharacterProps
+        |> id
         |> title
         |> uniqueness
         |> clan
@@ -220,6 +236,7 @@ dynastyCharacterDecoder =
 conflictCharacterDecoder : Decoder Card.Card
 conflictCharacterDecoder =
     Decode.succeed Card.ConflictCharacterProps
+        |> id
         |> title
         |> uniqueness
         |> clan
@@ -410,6 +427,11 @@ traits =
 title : Decoder (String -> b) -> Decoder b
 title =
     required "name" string
+
+
+id : Decoder (String -> b) -> Decoder b
+id =
+    required "id" string
 
 
 abilities : Decoder (List String -> b) -> Decoder b

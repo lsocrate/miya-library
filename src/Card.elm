@@ -94,7 +94,8 @@ type Event
 
 
 type alias RoleProps =
-    { title : String
+    { id : String
+    , title : String
     , traits : List RoleTypes
     , abilities : List String
     , formatRequirement : Maybe Format
@@ -105,7 +106,8 @@ type alias RoleProps =
 
 
 type alias StrongholdProps =
-    { title : String
+    { id : String
+    , title : String
     , clan : Clan
     , traits : List String
     , bonusStrength : Int
@@ -121,7 +123,8 @@ type alias StrongholdProps =
 
 
 type alias ProvinceProps =
-    { title : String
+    { id : String
+    , title : String
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
@@ -137,7 +140,8 @@ type alias ProvinceProps =
 
 
 type alias DynastyEventProps =
-    { title : String
+    { id : String
+    , title : String
     , clan : Clan
     , traits : List String
     , cost : Numerical
@@ -151,7 +155,8 @@ type alias DynastyEventProps =
 
 
 type alias ConflictEventProps =
-    { title : String
+    { id : String
+    , title : String
     , clan : Clan
     , traits : List String
     , cost : Numerical
@@ -166,7 +171,8 @@ type alias ConflictEventProps =
 
 
 type alias HoldingProps =
-    { title : String
+    { id : String
+    , title : String
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
@@ -181,7 +187,8 @@ type alias HoldingProps =
 
 
 type alias AttachmentProps =
-    { title : String
+    { id : String
+    , title : String
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
@@ -199,7 +206,8 @@ type alias AttachmentProps =
 
 
 type alias DynastyCharacterProps =
-    { title : String
+    { id : String
+    , title : String
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
@@ -217,7 +225,8 @@ type alias DynastyCharacterProps =
 
 
 type alias ConflictCharacterProps =
-    { title : String
+    { id : String
+    , title : String
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
@@ -299,3 +308,34 @@ clan card =
 
         ProvinceType (Province props) ->
             props.clan
+
+
+id : Card -> String
+id card =
+    case card of
+        RoleType (Role props) ->
+            props.id
+
+        StrongholdType (Stronghold props) ->
+            props.id
+
+        AttachmentType (Attachment props) ->
+            props.id
+
+        CharacterType (ConflictCharacter props) ->
+            props.id
+
+        CharacterType (DynastyCharacter props) ->
+            props.id
+
+        EventType (ConflictEvent props) ->
+            props.id
+
+        EventType (DynastyEvent props) ->
+            props.id
+
+        HoldingType (Holding props) ->
+            props.id
+
+        ProvinceType (Province props) ->
+            props.id
