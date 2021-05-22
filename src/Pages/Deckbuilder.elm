@@ -4,16 +4,14 @@ import API.Cards
 import Card
 import Clan exposing (Clan(..))
 import Dict
-import EverySet
 import Gen.Params.Deckbuilder exposing (Params)
 import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onCheck, onClick)
+import Html.Events exposing (onClick)
 import Http exposing (Error)
 import Page
 import Request
-import Result exposing (fromMaybe)
 import Shared
 import UI.ClanFilterSelector
 import UI.Page
@@ -45,7 +43,7 @@ type alias Deck =
 
 
 type alias Filters =
-    { byClan : UI.ClanFilterSelector.Model }
+    { byClan : UI.ClanFilterSelector.Model, byType : List String }
 
 
 type Model
@@ -82,7 +80,7 @@ update msg model =
         ( StrongholdSelected stronghold, ChoosingStronghold { allCards, oldDeck } ) ->
             ( Deckbuilding
                 { allCards = allCards
-                , filters = { byClan = UI.ClanFilterSelector.init }
+                , filters = { byClan = UI.ClanFilterSelector.init, byType = [] }
                 , deck =
                     Maybe.withDefault
                         { stronghold = stronghold
@@ -206,7 +204,7 @@ viewDeckbuilder cards deck filters =
 viewDeck : Deck -> Html Msg
 viewDeck deck =
     let
-        { setup, dynasty, conflict } =
+        { dynasty, conflict } =
             List.foldl
                 (\card groups ->
                     case card of

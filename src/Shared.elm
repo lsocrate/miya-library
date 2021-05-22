@@ -21,7 +21,7 @@ type alias Flags =
 
 type Model
     = Loading
-    | Loaded { cards : Dict String Card.Card }
+    | Loaded { cards : Dict String Card.Card, user : Maybe String }
     | Error
 
 
@@ -40,7 +40,7 @@ update _ msg model =
         ( FetchedCards result, Loading ) ->
             case result of
                 Ok cards ->
-                    ( Loaded { cards = cards }, Cmd.none )
+                    ( Loaded { cards = cards, user = Nothing }, Cmd.none )
 
                 Err _ ->
                     ( Error, Cmd.none )
