@@ -36,52 +36,47 @@ view deck =
 
         Just stronghold ->
             div [ class "decklist", id "decklist" ]
-                [ div [ class "decklist-deck_name" ]
-                    [ h1 [ class "decklist-deck_name" ]
-                        [ text <| Maybe.withDefault "Unnamed" deck.name ]
+                [ div [ class "decklist-name" ]
+                    [ text <| Maybe.withDefault "Unnamed" deck.name
+                    ]
+                , div [ class "decklist-stronghold" ]
+                    [ img [ src <| Maybe.withDefault "http://placekitten.com/300/419" stronghold.image ] []
                     ]
                 , div [ class "decklist-header" ]
-                    [ div [ class "decklist-header_stronghold" ]
-                        [ img [ src <| Maybe.withDefault "http://placekitten.com/300/419" stronghold.image ] []
-                        ]
-                    , div [ class "decklist-header_details" ]
-                        [ h2 [] [ text stronghold.title ]
-                        , h3 [] [ text <| Maybe.withDefault "" <| Maybe.map .title role ]
-                        , ul [] <| List.map (\( province, _ ) -> li [] [ text province.title ]) provinces
-                        ]
+                    [ h2 [] [ text stronghold.title ]
+                    , h3 [] [ text <| Maybe.withDefault "" <| Maybe.map .title role ]
+                    , ul [] <| List.map (\( province, _ ) -> li [] [ text <| province.title ++ " " ++ (String.join "/" <| List.map Card.elementName province.elements) ]) provinces
                     ]
-                , div [ class "decklist-decks" ]
-                    [ div [ class "decklist-deck" ]
-                        (div []
-                            [ text <|
-                                "Dynasty Deck ("
-                                    ++ String.fromInt
-                                        (sumCards dynastyCharacters
-                                            + sumCards dynastyHoldings
-                                            + sumCards dynastyEvents
-                                        )
-                                    ++ ")"
-                            ]
-                            :: cardBlock "Characters" dynastyCharacters
-                            ++ cardBlock "Events" dynastyEvents
-                            ++ cardBlock "Holdings" dynastyHoldings
-                        )
-                    , div [ class "decklist-deck" ]
-                        (div []
-                            [ text <|
-                                "Conflict Deck ("
-                                    ++ String.fromInt
-                                        (sumCards conflictAttachments
-                                            + sumCards conflictCharacters
-                                            + sumCards conflictEvents
-                                        )
-                                    ++ ")"
-                            ]
-                            :: cardBlock "Attachments" conflictAttachments
-                            ++ cardBlock "Characters" conflictCharacters
-                            ++ cardBlock "Events" conflictEvents
-                        )
-                    ]
+                , div [ class "decklist-dynasty_deck" ]
+                    (div []
+                        [ text <|
+                            "Dynasty Deck ("
+                                ++ String.fromInt
+                                    (sumCards dynastyCharacters
+                                        + sumCards dynastyHoldings
+                                        + sumCards dynastyEvents
+                                    )
+                                ++ ")"
+                        ]
+                        :: cardBlock "Characters" dynastyCharacters
+                        ++ cardBlock "Events" dynastyEvents
+                        ++ cardBlock "Holdings" dynastyHoldings
+                    )
+                , div [ class "decklist-conflict_deck" ]
+                    (div []
+                        [ text <|
+                            "Conflict Deck ("
+                                ++ String.fromInt
+                                    (sumCards conflictAttachments
+                                        + sumCards conflictCharacters
+                                        + sumCards conflictEvents
+                                    )
+                                ++ ")"
+                        ]
+                        :: cardBlock "Attachments" conflictAttachments
+                        ++ cardBlock "Characters" conflictCharacters
+                        ++ cardBlock "Events" conflictEvents
+                    )
                 ]
 
 

@@ -1,5 +1,5 @@
 {
-  "extends": "stylelint-config-sass-guidelines",
+  "plugins": ["stylelint-selector-bem-pattern"],
   "rules": {
     "string-quotes": "double"
   }

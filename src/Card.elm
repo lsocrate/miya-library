@@ -33,10 +33,29 @@ type RoleTypes
 
 type Element
     = Air
-    | Water
+    | Earth
     | Fire
     | Void
-    | Earth
+    | Water
+
+
+elementName : Element -> String
+elementName element =
+    case element of
+        Air ->
+            "Air"
+
+        Earth ->
+            "Earth"
+
+        Fire ->
+            "Fire"
+
+        Void ->
+            "Void"
+
+        Water ->
+            "Water"
 
 
 

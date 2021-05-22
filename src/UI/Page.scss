@@ -4,11 +4,17 @@ body {
   align-content: stretch;
   background-color: $miya-muted-1-rgba;
   display: grid;
-  gap: 10px;
+  gap: 20px;
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: 80px auto 160px;
   justify-content: stretch;
   min-height: 100vh;
+}
+
+.page-header,
+.page-main,
+.page-footer {
+  padding: 0 20px;
 }
 
 .page-header {
@@ -41,7 +47,6 @@ body {
 }
 
 .page-main {
-  background-color: $miya-dark-3-rgba;
   display: flex;
   grid-column: 1 / 13;
   grid-row: 2 / 3;
