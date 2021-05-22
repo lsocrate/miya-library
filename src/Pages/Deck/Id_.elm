@@ -81,22 +81,23 @@ view : Shared.Model -> Route -> Model -> View Msg
 view shared route model =
     let
         content =
-            case model of
-                Loading ->
+            case ( shared, model ) of
+                ( _, Loading ) ->
                     List.singleton viewLoading
 
-                Error ->
+                ( Shared.Loading, _ ) ->
+                    List.singleton viewLoading
+
+                ( _, Error ) ->
                     List.singleton viewError
 
-                Decklist decklist ->
-                    case shared of
-                        Shared.Loaded { cards } ->
-                            decklistToDeck cards decklist
-                                |> UI.Decklist.view
-                                |> List.singleton
+                ( Shared.Error, _ ) ->
+                    List.singleton viewError
 
-                        _ ->
-                            List.singleton viewLoading
+                ( Shared.Loaded { cards }, Decklist decklist ) ->
+                    [ div [ class "main-column--1_of_2" ] [ UI.Decklist.view <| decklistToDeck cards decklist ]
+                    , div [ class "main-column--1_of_2" ] []
+                    ]
     in
     UI.Page.view route content
 
@@ -117,7 +118,7 @@ decklistToDeck cardCollection decklist =
         realCards =
             List.filterMap (toCardTuple cardCollection) decklist
     in
-    { cards = realCards, name = Just "" }
+    { cards = realCards, name = Just "Kisada's last Stand" }
 
 
 toCardTuple : Dict.Dict String Card.Card -> ( String, Int ) -> Maybe ( Card.Card, Int )

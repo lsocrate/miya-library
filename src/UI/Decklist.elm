@@ -18,44 +18,91 @@ type alias Model =
 view : Model -> Html msg
 view deck =
     let
-        d =
+        firstCard =
+            List.head >> Maybe.map Tuple.first
+
+        grouped =
             partition deck.cards
+
+        role =
+            firstCard grouped.roles
+
+        { provinces, conflictAttachments, conflictCharacters, conflictEvents, dynastyCharacters, dynastyEvents, dynastyHoldings } =
+            grouped
     in
-    main_ [ class "decklist", id "decklist" ]
-        [ div [ class "decklist-deck_name" ]
-            [ h1 [ class "decklist-deck_name" ]
-                [ text <| Maybe.withDefault "Unnamed" deck.name ]
-            ]
-        , div [ class "decklist-header" ]
-            [ div [ class "decklist-header_stronghold" ]
-                [ text <| Maybe.withDefault "" deck.name ]
-            , div [ class "decklist-header_details" ]
-                [ h2 []
-                    [ text <| firstTitle d.strongholds ]
-                , h3 [] [ text <| firstTitle d.roles ]
+    case firstCard grouped.strongholds of
+        Nothing ->
+            div [] []
+
+        Just stronghold ->
+            div [ class "decklist", id "decklist" ]
+                [ div [ class "decklist-deck_name" ]
+                    [ h1 [ class "decklist-deck_name" ]
+                        [ text <| Maybe.withDefault "Unnamed" deck.name ]
+                    ]
+                , div [ class "decklist-header" ]
+                    [ div [ class "decklist-header_stronghold" ]
+                        [ img [ src <| Maybe.withDefault "http://placekitten.com/300/419" stronghold.image ] []
+                        ]
+                    , div [ class "decklist-header_details" ]
+                        [ h2 [] [ text stronghold.title ]
+                        , h3 [] [ text <| Maybe.withDefault "" <| Maybe.map .title role ]
+                        , ul [] <| List.map (\( province, _ ) -> li [] [ text province.title ]) provinces
+                        ]
+                    ]
+                , div [ class "decklist-decks" ]
+                    [ div [ class "decklist-deck" ]
+                        (div []
+                            [ text <|
+                                "Dynasty Deck ("
+                                    ++ String.fromInt
+                                        (sumCards dynastyCharacters
+                                            + sumCards dynastyHoldings
+                                            + sumCards dynastyEvents
+                                        )
+                                    ++ ")"
+                            ]
+                            :: cardBlock "Characters" dynastyCharacters
+                            ++ cardBlock "Events" dynastyEvents
+                            ++ cardBlock "Holdings" dynastyHoldings
+                        )
+                    , div [ class "decklist-deck" ]
+                        (div []
+                            [ text <|
+                                "Conflict Deck ("
+                                    ++ String.fromInt
+                                        (sumCards conflictAttachments
+                                            + sumCards conflictCharacters
+                                            + sumCards conflictEvents
+                                        )
+                                    ++ ")"
+                            ]
+                            :: cardBlock "Attachments" conflictAttachments
+                            ++ cardBlock "Characters" conflictCharacters
+                            ++ cardBlock "Events" conflictEvents
+                        )
+                    ]
                 ]
-            ]
-        , div [ class "decklist-decks" ]
-            [ div [ class "decklist-deck" ] []
-            , div [ class "decklist-deck" ] []
-            ]
+
+
+cardBlock : String -> List (DecklistEntry { t | title : String }) -> List (Html msg)
+cardBlock title cards =
+    let
+        cardRow ( card, n ) =
+            li [] [ text (String.fromInt n ++ "x " ++ card.title) ]
+    in
+    if sumCards cards > 0 then
+        [ div [] [ text <| title ++ " (" ++ String.fromInt (sumCards cards) ++ ")" ]
+        , ul [] <| List.map cardRow cards
         ]
 
-
-firstTitle : List (DecklistEntry { t | title : String }) -> String
-firstTitle shs =
-    List.head shs
-        |> Maybe.map (Tuple.first >> .title)
-        |> Maybe.withDefault ""
+    else
+        []
 
 
-viewDeckSide : List (DecklistEntry Card.Card) -> List (Html msg)
-viewDeckSide cards =
-    let
-        cardItem ( card, qty ) =
-            li [] [ text (String.fromInt qty ++ "x " ++ Card.title card) ]
-    in
-    [ ul [] (List.map cardItem cards) ]
+sumCards : List (DecklistEntry a) -> Int
+sumCards =
+    List.sum << List.map Tuple.second
 
 
 partition :

@@ -99,6 +99,7 @@ strongholdDecoder =
         |> influenceValue
         |> abilities
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -113,6 +114,7 @@ roleDecoder =
         |> roleTraits
         |> abilities
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -132,6 +134,7 @@ provinceDecoder =
         |> abilities
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -150,6 +153,7 @@ holdingDecoder =
         |> abilities
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -171,6 +175,7 @@ attachmentDecoder =
         |> influenceCost
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -188,6 +193,7 @@ dynastyEventDecoder =
         |> abilities
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -206,6 +212,7 @@ conflictEventDecoder =
         |> influenceCost
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -227,6 +234,7 @@ dynastyCharacterDecoder =
         |> abilities
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -249,6 +257,7 @@ conflictCharacterDecoder =
         |> influenceCost
         |> roleRequirement
         |> formatRequirement
+        |> image
         |> cycle
         |> cardNumber
         |> artist
@@ -470,6 +479,11 @@ cardNumber =
 artist : Decoder (Maybe String -> b) -> Decoder b
 artist =
     required "pack_cards" <| maybe (index 0 (field "illustrator" string))
+
+
+image : Decoder (Maybe String -> b) -> Decoder b
+image =
+    required "pack_cards" <| maybe (index 0 (field "image_url" string))
 
 
 modifier : Decoder Int

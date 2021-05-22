@@ -42,6 +42,7 @@ body {
 
 .page-main {
   background-color: $miya-dark-3-rgba;
+  display: flex;
   grid-column: 1 / 13;
   grid-row: 2 / 3;
 }
