@@ -30,7 +30,7 @@ view currentRoute mainViews =
             , nav [ class "nav" ]
                 [ ul [ class "nav-list" ] <| List.map navItem items ]
             ]
-        , main_ [ class "page-main" ] mainViews
+        , div [ class "page-container" ] mainViews
         , footer [ class "page-footer" ]
             [ p []
                 [ text "This site is not owned, endorsed or supported by Fantasy Flight Publishing, Inc."

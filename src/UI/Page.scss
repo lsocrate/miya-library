@@ -39,11 +39,13 @@ body {
   }
 }
 
-.page-main {
-  display: flex;
+.page-container {
+  padding: 0 20px;
   grid-column: 1 / 13;
   grid-row: 2 / 3;
-  padding: 0 20px;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(12, 1fr);
 }
 
 .page-footer {

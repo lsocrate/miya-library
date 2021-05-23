@@ -89,11 +89,15 @@ cardBlock : String -> List (DecklistEntry { t | title : String }) -> List (Html 
 cardBlock title cards =
     let
         cardRow ( card, n ) =
-            li [] [ text (String.fromInt n ++ "x " ++ card.title) ]
+            if n < 1 then
+                Nothing
+
+            else
+                Just (li [] [ text (String.fromInt n ++ "x " ++ card.title) ])
     in
     if sumCards cards > 0 then
         [ div [] [ text <| title ++ " (" ++ String.fromInt (sumCards cards) ++ ")" ]
-        , ul [] <| List.map cardRow cards
+        , ul [] <| List.filterMap cardRow cards
         ]
 
     else

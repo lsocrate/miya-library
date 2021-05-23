@@ -1,23 +1,29 @@
-.deckbuilder {
-  display: grid;
-}
-.buildercards-card_rows {
-  display: block;
-  margin: 0;
-  padding: 0;
+.strongholdpicker {
+  grid-column: 1/13;
 }
 
-.buildercards-row {
-  display: block;
+.strongholdpicker-options {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px 15px;
+  place-items: start center;
 }
-.buildercards-quantity_picker {
-  display: block;
+
+.strongholdpicker-item {
+  list-style: none;
+  cursor: pointer;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+  }
 }
-.buildercards-quantity_option {
-  display: block;
+
+.deckbuilder-decklist {
+  grid-column: 1/7;
 }
-.buildercards-quantity_option--active {
-}
-.buildercards-quantity_card {
-  display: block;
+.deckbuilder-builder {
+  grid-column: 7/13;
 }
