@@ -2,19 +2,31 @@ module Numerical exposing (Numerical(..), toString)
 
 
 type Numerical
-    = Fixed Int
-    | Dash
-    | Variable
+    = Dash
+    | FixedValue Int
+    | VariableValue
+    | FixedModifier Int
+    | VariableModifier
 
 
 toString : Numerical -> String
 toString num =
     case num of
-        Fixed n ->
-            String.fromInt n
-
         Dash ->
             "—"
 
-        Variable ->
+        FixedValue n ->
+            String.fromInt n
+
+        VariableValue ->
             "X"
+
+        FixedModifier n ->
+            if n < 0 then
+                String.fromInt n
+
+            else
+                "+" ++ String.fromInt n
+
+        VariableModifier ->
+            "+X"

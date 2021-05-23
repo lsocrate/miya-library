@@ -297,20 +297,26 @@ toNumericalValue : String -> Decoder Numerical.Numerical
 toNumericalValue string =
     case string of
         "+X" ->
-            Decode.succeed Numerical.Variable
+            Decode.succeed Numerical.VariableModifier
 
         "X" ->
-            Decode.succeed Numerical.Variable
+            Decode.succeed Numerical.VariableValue
 
         "-" ->
             Decode.succeed Numerical.Dash
 
         _ ->
-            case String.toInt string of
-                Just n ->
-                    Decode.succeed (Numerical.Fixed n)
+            case ( String.left 1 string, String.toInt string ) of
+                ( "+", Just n ) ->
+                    Decode.succeed (Numerical.FixedModifier n)
 
-                Nothing ->
+                ( "-", Just n ) ->
+                    Decode.succeed (Numerical.FixedModifier n)
+
+                ( _, Just n ) ->
+                    Decode.succeed (Numerical.FixedValue n)
+
+                ( _, Nothing ) ->
                     Decode.fail "Invalid numerical value"
 
 
