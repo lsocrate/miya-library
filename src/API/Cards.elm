@@ -8,6 +8,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder, bool, field, index, int, list, map, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import List
+import Numerical
 import String
 
 
@@ -278,7 +279,7 @@ type SkillType
     | Political
 
 
-skill : SkillType -> Decoder (Card.Numerical -> b) -> Decoder b
+skill : SkillType -> Decoder (Numerical.Numerical -> b) -> Decoder b
 skill skillType =
     let
         fieldName =
@@ -289,31 +290,31 @@ skill skillType =
                 Political ->
                     "political"
     in
-    optional fieldName (string |> Decode.andThen toNumericalValue) Card.Dash
+    optional fieldName (string |> Decode.andThen toNumericalValue) Numerical.Dash
 
 
-toNumericalValue : String -> Decoder Card.Numerical
+toNumericalValue : String -> Decoder Numerical.Numerical
 toNumericalValue string =
     case string of
         "+X" ->
-            Decode.succeed Card.Variable
+            Decode.succeed Numerical.Variable
 
         "X" ->
-            Decode.succeed Card.Variable
+            Decode.succeed Numerical.Variable
 
         "-" ->
-            Decode.succeed Card.Dash
+            Decode.succeed Numerical.Dash
 
         _ ->
             case String.toInt string of
                 Just n ->
-                    Decode.succeed (Card.Fixed n)
+                    Decode.succeed (Numerical.Fixed n)
 
                 Nothing ->
                     Decode.fail "Invalid numerical value"
 
 
-skillBonus : SkillType -> Decoder (Card.Numerical -> b) -> Decoder b
+skillBonus : SkillType -> Decoder (Numerical.Numerical -> b) -> Decoder b
 skillBonus skillType =
     let
         fieldName =
@@ -327,9 +328,9 @@ skillBonus skillType =
     required fieldName (string |> Decode.andThen toNumericalValue)
 
 
-cost : Decoder (Card.Numerical -> b) -> Decoder b
+cost : Decoder (Numerical.Numerical -> b) -> Decoder b
 cost =
-    optional "cost" (string |> Decode.andThen toNumericalValue) Card.Dash
+    optional "cost" (string |> Decode.andThen toNumericalValue) Numerical.Dash
 
 
 influenceCost : Decoder (Maybe Int -> b) -> Decoder b
@@ -423,7 +424,7 @@ bonusStrength =
     required "strength_bonus" modifier
 
 
-strength : Decoder (Card.Numerical -> b) -> Decoder b
+strength : Decoder (Numerical.Numerical -> b) -> Decoder b
 strength =
     required "strength" (string |> Decode.andThen toNumericalValue)
 

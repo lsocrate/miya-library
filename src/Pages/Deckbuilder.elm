@@ -8,6 +8,7 @@ import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Numerical exposing (Numerical)
 import Page
 import Request
 import Shared
@@ -52,7 +53,16 @@ type Model
 
 init : ( Model, Cmd Msg )
 init =
-    ( ChoosingStronghold Nothing, Cmd.none )
+    -- ( ChoosingStronghold Nothing, Cmd.none )
+    ( Deckbuilding
+        { stronghold = "shiro-nishiyama"
+        , name = Nothing
+        , role = Nothing
+        , otherCards = Dict.empty
+        }
+        { byClan = UI.ClanFilterSelector.init, byType = [] }
+    , Cmd.none
+    )
 
 
 type Msg
@@ -201,8 +211,8 @@ viewCardsOptions cards deck filters =
                 copiesInDeck =
                     Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
             in
-            li [ class "buildercards-row" ]
-                [ div [ class "buildercards-quantity_picker" ]
+            li [ class "cardlist-row" ]
+                [ div [ class "cardlist-picker" ]
                     (List.range 0 3
                         |> List.map
                             (\qty ->
@@ -213,20 +223,26 @@ viewCardsOptions cards deck filters =
                                         , name <| Card.title card
                                         , onClick <| CardCountInDeckChange card qty
                                         , classList
-                                            [ ( "buildercards-quantity_option", True )
-                                            , ( "buildercards-quantity_option--active", qty == copiesInDeck )
+                                            [ ( "cardlist-option", True )
+                                            , ( "cardlist-option--active", qty == copiesInDeck )
                                             ]
                                         ]
                                         []
                                     ]
                             )
                     )
-                , div [ class "buildercards-card" ]
-                    [ text (Card.title card)
-                    ]
+                , div [ class "cardlist-clan" ] [ text (Clan.name <| Card.clan card) ]
+                , div [ class "cardlist-type" ] [ text (Card.title card) ]
+                , div [ class "cardlist-title" ] [ text (Card.title card) ]
+                , div [ class "cardlist-influence" ] [ text (Card.title card) ]
+                , div [ class "cardlist-cost" ] [ text <| Maybe.withDefault "*" <| Maybe.map Numerical.toString <| Card.cost card ]
+                , div [ class "cardlist-military" ] [ text (Card.title card) ]
+                , div [ class "cardlist-political" ] [ text (Card.title card) ]
+                , div [ class "cardlist-glory" ] [ text (Card.title card) ]
+                , div [ class "cardlist-strength" ] [ text (Card.title card) ]
                 ]
     in
     div [ class "cards" ]
         [ p [] [ text "Cards" ]
-        , ul [ class "buildercards-card_rows" ] (List.map cardRow filteredCards)
+        , ul [ class "cardlist" ] (List.map cardRow filteredCards)
         ]

@@ -2,6 +2,7 @@ module Card exposing (..)
 
 import Clan exposing (Clan)
 import Format exposing (Format)
+import Numerical exposing (Numerical)
 
 
 
@@ -56,16 +57,6 @@ elementName element =
 
         Water ->
             "Water"
-
-
-
--- NUMERICAL
-
-
-type Numerical
-    = Fixed Int
-    | Dash
-    | Variable
 
 
 
@@ -367,3 +358,41 @@ id card =
 
         ProvinceType (Province props) ->
             props.id
+
+
+cost : Card -> Maybe Numerical
+cost card =
+    case card of
+        AttachmentType (Attachment props) ->
+            Just props.cost
+
+        CharacterType (ConflictCharacter props) ->
+            Just props.cost
+
+        CharacterType (DynastyCharacter props) ->
+            Just props.cost
+
+        EventType (ConflictEvent props) ->
+            Just props.cost
+
+        EventType (DynastyEvent props) ->
+            Just props.cost
+
+        _ ->
+            Nothing
+
+
+military : Card -> Maybe Numerical
+military card =
+    case card of
+        AttachmentType (Attachment props) ->
+            Just props.militarySkillBonus
+
+        CharacterType (ConflictCharacter props) ->
+            Just props.militarySkill
+
+        CharacterType (DynastyCharacter props) ->
+            Just props.militarySkill
+
+        _ ->
+            Nothing
