@@ -2,7 +2,7 @@ module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import Card
 import Clan exposing (Clan(..))
-import Dict exposing (filter)
+import Dict
 import Gen.Params.Deckbuilder exposing (Params)
 import Gen.Route exposing (Route)
 import Html exposing (..)

@@ -13,8 +13,8 @@ type Clan
     | Shadowlands
 
 
-clanName : Clan -> String
-clanName clan =
+name : Clan -> String
+name clan =
     case clan of
         Crab ->
             "Crab"
@@ -73,3 +73,34 @@ comparable clan =
 
         Shadowlands ->
             9
+
+
+mon : Clan -> String
+mon clan =
+    case clan of
+        Crab ->
+            "/assets/mon-crab.svg"
+
+        Crane ->
+            "/assets/mon-crane.svg"
+
+        Dragon ->
+            "/assets/mon-dragon.svg"
+
+        Lion ->
+            "/assets/mon-lion.svg"
+
+        Phoenix ->
+            "/assets/mon-phoenix.svg"
+
+        Scorpion ->
+            "/assets/mon-scorpion.svg"
+
+        Unicorn ->
+            "/assets/mon-unicorn.svg"
+
+        Neutral ->
+            "/assets/mon-neutral.svg"
+
+        Shadowlands ->
+            "/assets/mon-neutral.svg"
