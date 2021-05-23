@@ -11,6 +11,7 @@ type alias DecklistEntry c =
 
 type alias Model =
     { name : Maybe String
+    , author : String
     , cards : List (DecklistEntry Card.Card)
     }
 
@@ -37,10 +38,14 @@ view deck =
         Just stronghold ->
             div [ class "decklist", id "decklist" ]
                 [ div [ class "decklist-name" ]
-                    [ text <| Maybe.withDefault "Unnamed" deck.name
+                    [ text <| Maybe.withDefault "Unnamed" deck.name ++ " by " ++ deck.author
                     ]
                 , div [ class "decklist-stronghold" ]
-                    [ img [ src <| Maybe.withDefault "http://placekitten.com/300/419" stronghold.image ] []
+                    [ img
+                        [ src <| Maybe.withDefault "http://placekitten.com/300/419" stronghold.image
+                        , attribute "loading" "lazy"
+                        ]
+                        []
                     ]
                 , div [ class "decklist-header" ]
                     [ h2 [] [ text stronghold.title ]

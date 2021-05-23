@@ -1,8 +1,6 @@
-@import "../vars";
-
 body {
   align-content: stretch;
-  background-color: $miya-muted-1-rgba;
+  background-color: var(--color-bg);
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(12, 1fr);
@@ -11,15 +9,10 @@ body {
   min-height: 100vh;
 }
 
-.page-header,
-.page-main,
-.page-footer {
-  padding: 0 20px;
-}
-
 .page-header {
-  background-color: $miya-dark-2-rgba;
+  background-color: var(--color-dark);
   display: flex;
+  padding: 20px;
   grid-column: 1 / 13;
   grid-row: 1 / 2;
 }
@@ -42,7 +35,7 @@ body {
 
   a {
     color: #000;
-    text-decoration: underline 2px $miya-muted-5-rgba;
+    text-decoration: underline 2px var(--color-accent);
   }
 }
 
@@ -50,10 +43,12 @@ body {
   display: flex;
   grid-column: 1 / 13;
   grid-row: 2 / 3;
+  padding: 0 20px;
 }
 
 .page-footer {
-  background-color: $miya-dark-4-rgba;
+  background-color: var(--color-strong);
   grid-column: 1/13;
   grid-row: 3 / 4;
+  padding: 20px 20px 40px;
 }

@@ -118,7 +118,7 @@ decklistToDeck cardCollection decklist =
         realCards =
             List.filterMap (toCardTuple cardCollection) decklist
     in
-    { cards = realCards, name = Just "Kisada's last Stand" }
+    { cards = realCards, name = Just "Kisada's last Stand", author = "HidaAmoro" }
 
 
 toCardTuple : Dict.Dict String Card.Card -> ( String, Int ) -> Maybe ( Card.Card, Int )

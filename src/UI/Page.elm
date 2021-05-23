@@ -25,11 +25,19 @@ view currentRoute mainViews =
     { title = "Miya Library"
     , body =
         [ header [ class "page-header" ]
-            [ div [ class "header-logo" ] [ text "Miya Library" ]
+            [ div [ class "header-logo" ]
+                [ text "Miya Library" ]
             , nav [ class "nav" ]
                 [ ul [ class "nav-list" ] <| List.map navItem items ]
             ]
         , main_ [ class "page-main" ] mainViews
-        , footer [ class "page-footer" ] [ text "footer" ]
+        , footer [ class "page-footer" ]
+            [ p []
+                [ text "This site is not owned, endorsed or supported by Fantasy Flight Publishing, Inc."
+                ]
+            , p []
+                [ text "The information presented above about Legend of the Five Rings LCG, both literal and graphical, is © Fantasy Flight Publishing, Inc. All rights reserved."
+                ]
+            ]
         ]
     }
