@@ -56,6 +56,7 @@
   border-color: #000;
   border-style: solid;
   border-width: 1px 1px 1px 0;
+  cursor: pointer;
 
   &:first-child {
     border-width: 1px;
@@ -68,5 +69,15 @@
 .cardlist-option--active {
   background: #fc0;
 }
-.cardlist-title {
+
+.cardlist-clan,
+.cardlist-type,
+.cardlist-title,
+.cardlist-influence,
+.cardlist-cost,
+.cardlist-military,
+.cardlist-political,
+.cardlist-glory,
+.cardlist-strength {
+  display: inline-block;
 }

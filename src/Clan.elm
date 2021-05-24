@@ -44,6 +44,37 @@ name clan =
             "Shadowlands"
 
 
+icon : Clan -> String
+icon clan =
+    case clan of
+        Crab ->
+            "🦀"
+
+        Crane ->
+            "🦢"
+
+        Dragon ->
+            "🐉"
+
+        Lion ->
+            "🦁"
+
+        Phoenix ->
+            "🐣"
+
+        Scorpion ->
+            "🦂"
+
+        Unicorn ->
+            "🦄"
+
+        Neutral ->
+            "✨"
+
+        Shadowlands ->
+            "👹"
+
+
 comparable : Clan -> Int
 comparable clan =
     case clan of

@@ -254,7 +254,7 @@ viewCardsOptions cards deck filters =
                                     ]
                             )
                     )
-                , div [ class "cardlist-clan" ] [ text (Clan.name <| Card.clan card) ]
+                , div [ class "cardlist-clan" ] [ text (Clan.icon <| Card.clan card) ]
                 , div [ class "cardlist-type" ] [ text (cardTypeIcon card) ]
                 , div [ class "cardlist-title" ] [ text (Card.title card) ]
                 , div [ class "cardlist-influence" ]
