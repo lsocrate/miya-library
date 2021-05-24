@@ -45,10 +45,28 @@
   display: block;
 }
 .cardlist-picker {
+  display: inline-block;
 }
 .cardlist-option {
+  background: #fff;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  border-color: #000;
+  border-style: solid;
+  border-width: 1px 1px 1px 0;
+
+  &:first-child {
+    border-width: 1px;
+  }
+
+  input {
+    display: none;
+  }
 }
 .cardlist-option--active {
+  background: #fc0;
 }
 .cardlist-title {
 }

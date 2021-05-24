@@ -205,7 +205,29 @@ viewCardsOptions cards deck filters =
             Dict.values cards
                 |> List.filter (Card.clan >> UI.ClanFilterSelector.isClanAllowed filters.byClan)
 
-        cardRow : Card.Card -> Html Msg
+        cardTypeIcon card =
+            case card of
+                Card.StrongholdType _ ->
+                    "🏯"
+
+                Card.ProvinceType _ ->
+                    "⛰️"
+
+                Card.HoldingType _ ->
+                    "🏨"
+
+                Card.CharacterType _ ->
+                    "🧑"
+
+                Card.AttachmentType _ ->
+                    "🗡️"
+
+                Card.EventType _ ->
+                    "⚡"
+
+                Card.RoleType _ ->
+                    "📇"
+
         cardRow card =
             let
                 copiesInDeck =
@@ -216,30 +238,37 @@ viewCardsOptions cards deck filters =
                     (List.range 0 3
                         |> List.map
                             (\qty ->
-                                label []
+                                label
+                                    [ classList
+                                        [ ( "cardlist-option", True )
+                                        , ( "cardlist-option--active", qty == copiesInDeck )
+                                        ]
+                                    ]
                                     [ text <| String.fromInt qty
                                     , input
                                         [ type_ "radio"
                                         , name <| Card.title card
                                         , onClick <| CardCountInDeckChange card qty
-                                        , classList
-                                            [ ( "cardlist-option", True )
-                                            , ( "cardlist-option--active", qty == copiesInDeck )
-                                            ]
                                         ]
                                         []
                                     ]
                             )
                     )
                 , div [ class "cardlist-clan" ] [ text (Clan.name <| Card.clan card) ]
-                , div [ class "cardlist-type" ] [ text (Card.title card) ]
+                , div [ class "cardlist-type" ] [ text (cardTypeIcon card) ]
                 , div [ class "cardlist-title" ] [ text (Card.title card) ]
-                , div [ class "cardlist-influence" ] [ text (Card.title card) ]
-                , div [ class "cardlist-cost" ] [ text <| Maybe.withDefault "*" <| Maybe.map Numerical.toString <| Card.cost card ]
-                , div [ class "cardlist-military" ] [ text (Card.title card) ]
-                , div [ class "cardlist-political" ] [ text (Card.title card) ]
-                , div [ class "cardlist-glory" ] [ text (Card.title card) ]
-                , div [ class "cardlist-strength" ] [ text (Card.title card) ]
+                , div [ class "cardlist-influence" ]
+                    [ text <| Maybe.withDefault "•" <| Maybe.map String.fromInt <| Card.influence card ]
+                , div [ class "cardlist-cost" ]
+                    [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.cost card ]
+                , div [ class "cardlist-military" ]
+                    [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.military card ]
+                , div [ class "cardlist-political" ]
+                    [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.political card ]
+                , div [ class "cardlist-glory" ]
+                    [ text <| Maybe.withDefault "•" <| Maybe.map String.fromInt <| Card.glory card ]
+                , div [ class "cardlist-strength" ]
+                    [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.strength card ]
                 ]
     in
     div [ class "cards" ]

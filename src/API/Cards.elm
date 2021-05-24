@@ -425,9 +425,9 @@ startingHonor =
     required "honor" int
 
 
-bonusStrength : Decoder (Int -> b) -> Decoder b
+bonusStrength : Decoder (Numerical.Numerical -> b) -> Decoder b
 bonusStrength =
-    required "strength_bonus" modifier
+    required "strength_bonus" (string |> Decode.andThen toNumericalValue)
 
 
 strength : Decoder (Numerical.Numerical -> b) -> Decoder b
@@ -491,20 +491,6 @@ artist =
 image : Decoder (Maybe String -> b) -> Decoder b
 image =
     required "pack_cards" <| maybe (index 0 (field "image_url" string))
-
-
-modifier : Decoder Int
-modifier =
-    let
-        decodeModifier str =
-            case String.toInt str of
-                Just n ->
-                    Decode.succeed n
-
-                Nothing ->
-                    Decode.fail "Invalid modifier"
-    in
-    string |> Decode.andThen decodeModifier
 
 
 clan : Decoder (Clan.Clan -> b) -> Decoder b

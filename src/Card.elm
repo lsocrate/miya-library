@@ -121,7 +121,7 @@ type alias StrongholdProps =
     , title : String
     , clan : Clan
     , traits : List String
-    , bonusStrength : Int
+    , bonusStrength : Numerical
     , startingHonor : Int
     , fateValue : Int
     , influenceValue : Int
@@ -191,7 +191,7 @@ type alias HoldingProps =
     , uniqueness : Uniqueness
     , clan : Clan
     , traits : List String
-    , bonusStrength : Int
+    , bonusStrength : Numerical
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
@@ -393,6 +393,67 @@ military card =
 
         CharacterType (DynastyCharacter props) ->
             Just props.militarySkill
+
+        _ ->
+            Nothing
+
+
+political : Card -> Maybe Numerical
+political card =
+    case card of
+        AttachmentType (Attachment props) ->
+            Just props.politicalSkillBonus
+
+        CharacterType (ConflictCharacter props) ->
+            Just props.politicalSkill
+
+        CharacterType (DynastyCharacter props) ->
+            Just props.politicalSkill
+
+        _ ->
+            Nothing
+
+
+glory : Card -> Maybe Int
+glory card =
+    case card of
+        CharacterType (ConflictCharacter props) ->
+            Just props.glory
+
+        CharacterType (DynastyCharacter props) ->
+            Just props.glory
+
+        _ ->
+            Nothing
+
+
+strength : Card -> Maybe Numerical
+strength card =
+    case card of
+        StrongholdType (Stronghold props) ->
+            Just props.bonusStrength
+
+        HoldingType (Holding props) ->
+            Just props.bonusStrength
+
+        ProvinceType (Province props) ->
+            Just props.strength
+
+        _ ->
+            Nothing
+
+
+influence : Card -> Maybe Int
+influence card =
+    case card of
+        CharacterType (ConflictCharacter props) ->
+            props.influenceCost
+
+        AttachmentType (Attachment props) ->
+            props.influenceCost
+
+        EventType (ConflictEvent props) ->
+            props.influenceCost
 
         _ ->
             Nothing
