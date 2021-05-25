@@ -13,7 +13,7 @@ toString : Numerical -> String
 toString num =
     case num of
         Dash ->
-            "—"
+            "–"
 
         FixedValue n ->
             String.fromInt n
