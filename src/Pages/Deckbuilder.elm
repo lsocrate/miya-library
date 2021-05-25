@@ -204,6 +204,7 @@ viewCardsOptions cards deck filters =
         filteredCards =
             Dict.values cards
                 |> List.filter (Card.clan >> UI.ClanFilterSelector.isClanAllowed filters.byClan)
+                |> List.sortBy (\card -> -1 * (Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards))
 
         cardTypeIcon card =
             case card of
