@@ -233,45 +233,71 @@ viewCardsOptions cards deck filters =
                 copiesInDeck =
                     Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
             in
-            li [ class "cardlist-row" ]
-                [ div [ class "cardlist-picker" ]
-                    (List.range 0 3
-                        |> List.map
-                            (\qty ->
-                                label
-                                    [ classList
-                                        [ ( "cardlist-option", True )
-                                        , ( "cardlist-option--active", qty == copiesInDeck )
+            tr [ class "cardlist-row" ]
+                [ td [ class "cardlist-quantity" ]
+                    [ div [ class "cardlist-picker" ]
+                        (List.range 0 3
+                            |> List.map
+                                (\qty ->
+                                    label
+                                        [ classList
+                                            [ ( "cardlist-option", True )
+                                            , ( "cardlist-option--active", qty == copiesInDeck )
+                                            ]
                                         ]
-                                    ]
-                                    [ text <| String.fromInt qty
-                                    , input
-                                        [ type_ "radio"
-                                        , name <| Card.title card
-                                        , onClick <| CardCountInDeckChange card qty
+                                        [ text <| String.fromInt qty
+                                        , input
+                                            [ type_ "radio"
+                                            , name <| Card.title card
+                                            , onClick <| CardCountInDeckChange card qty
+                                            ]
+                                            []
                                         ]
-                                        []
-                                    ]
-                            )
-                    )
-                , div [ class "cardlist-clan" ] [ text (Clan.icon <| Card.clan card) ]
-                , div [ class "cardlist-type" ] [ text (cardTypeIcon card) ]
-                , div [ class "cardlist-title" ] [ text (Card.title card) ]
-                , div [ class "cardlist-influence" ]
+                                )
+                        )
+                    ]
+                , td [ class "cardlist-clan" ] [ text (Clan.icon <| Card.clan card) ]
+                , td [ class "cardlist-type" ] [ text (cardTypeIcon card) ]
+                , td [ class "cardlist-title" ]
+                    [ text (Card.title card)
+                    , text <|
+                        if Card.isUnique card then
+                            " ⁕"
+
+                        else
+                            ""
+                    ]
+                , td [ class "cardlist-influence" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map String.fromInt <| Card.influence card ]
-                , div [ class "cardlist-cost" ]
+                , td [ class "cardlist-cost" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.cost card ]
-                , div [ class "cardlist-military" ]
+                , td [ class "cardlist-military" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.military card ]
-                , div [ class "cardlist-political" ]
+                , td [ class "cardlist-political" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.political card ]
-                , div [ class "cardlist-glory" ]
+                , td [ class "cardlist-glory" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map String.fromInt <| Card.glory card ]
-                , div [ class "cardlist-strength" ]
+                , td [ class "cardlist-strength" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.strength card ]
                 ]
     in
     div [ class "cards" ]
         [ p [] [ text "Cards" ]
-        , ul [ class "cardlist" ] (List.map cardRow filteredCards)
+        , table [ class "cardlist" ]
+            [ thead []
+                [ tr []
+                    [ th [ class "cardlist-quantity" ] [ text "Quantity" ]
+                    , th [ class "cardlist-clan" ] [ text "c" ]
+                    , th [ class "cardlist-type" ] [ text "t" ]
+                    , th [ class "cardlist-title" ] [ text "Title" ]
+                    , th [ class "cardlist-influence" ] [ text "I" ]
+                    , th [ class "cardlist-cost" ] [ text "C" ]
+                    , th [ class "cardlist-military" ] [ text "M" ]
+                    , th [ class "cardlist-political" ] [ text "P" ]
+                    , th [ class "cardlist-glory" ] [ text "G" ]
+                    , th [ class "cardlist-strength" ] [ text "S" ]
+                    ]
+                ]
+            , tbody [] (List.map cardRow filteredCards)
+            ]
         ]

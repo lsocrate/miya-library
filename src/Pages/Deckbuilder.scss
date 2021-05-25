@@ -38,14 +38,9 @@
 // CARD PICKER
 // ------------
 .cardlist {
-  padding: 0;
-  margin: 0;
-}
-.cardlist-row {
-  display: block;
+  width: 100%;
 }
 .cardlist-picker {
-  display: inline-block;
 }
 .cardlist-option {
   background: #fff;
@@ -70,14 +65,25 @@
   background: #fc0;
 }
 
+.cardlist-quantity {
+  width: 85px;
+}
+
 .cardlist-clan,
-.cardlist-type,
-.cardlist-title,
-.cardlist-influence,
+.cardlist-type {
+  width: 1rem;
+  text-align: center;
+}
+
+.cardlist-influence {
+  width: 2rem;
+  text-align: right;
+}
 .cardlist-cost,
 .cardlist-military,
 .cardlist-political,
-.cardlist-glory,
-.cardlist-strength {
-  display: inline-block;
+.cardlist-strength,
+.cardlist-glory {
+  width: 1.5rem;
+  text-align: center;
 }

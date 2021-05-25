@@ -457,3 +457,34 @@ influence card =
 
         _ ->
             Nothing
+
+
+isUnique : Card -> Bool
+isUnique card =
+    let
+        unique props =
+            case props.uniqueness of
+                Unique ->
+                    True
+
+                NonUnique ->
+                    False
+    in
+    case card of
+        AttachmentType (Attachment props) ->
+            unique props
+
+        CharacterType (ConflictCharacter props) ->
+            unique props
+
+        CharacterType (DynastyCharacter props) ->
+            unique props
+
+        HoldingType (Holding props) ->
+            unique props
+
+        ProvinceType (Province props) ->
+            unique props
+
+        _ ->
+            False
