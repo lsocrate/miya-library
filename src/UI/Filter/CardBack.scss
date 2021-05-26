@@ -1,0 +1,43 @@
+.cardbackfilter {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(9, 40px);
+  grid-template-rows: 40px;
+}
+
+.cardbackfilter-item {
+  display: block;
+  border-width: 1px 1px 1px 0;
+  border-color: var(--color-weak);
+  border-style: solid;
+  &:first-child {
+    border-width: 1px 1px 1px 1px;
+  }
+}
+.cardbackfilter-button {
+  background: #fff;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  border: 0;
+  cursor: pointer;
+}
+
+.cardbackfilter-button--conflict {
+  color: var(--color-conflict);
+
+  &.cardbackfilter-button--active {
+    background: var(--color-conflict);
+    color: #fff;
+  }
+}
+
+.cardbackfilter-button--dynasty {
+  color: var(--color-dynasty);
+
+  &.cardbackfilter-button--active {
+    background: var(--color-dynasty);
+    color: #fff;
+  }
+}

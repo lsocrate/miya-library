@@ -8,12 +8,13 @@ import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Numerical exposing (Numerical)
+import Numerical
 import Page
 import Request
 import Shared
-import UI.ClanFilterSelector
 import UI.Decklist
+import UI.Filter.CardBack
+import UI.Filter.Clan
 import UI.Page
 import Url exposing (Protocol(..))
 import View exposing (View)
@@ -43,7 +44,7 @@ type alias Deck =
 
 
 type alias Filters =
-    { byClan : UI.ClanFilterSelector.Model, byType : List String }
+    { byClan : UI.Filter.Clan.Model, byCardBack : UI.Filter.CardBack.Model }
 
 
 type Model
@@ -60,15 +61,16 @@ init =
         , role = Nothing
         , otherCards = Dict.empty
         }
-        { byClan = UI.ClanFilterSelector.init, byType = [] }
+        { byClan = UI.Filter.Clan.init, byCardBack = UI.Filter.CardBack.init }
     , Cmd.none
     )
 
 
 type Msg
     = StrongholdSelected String
-    | ClanFilterChanged UI.ClanFilterSelector.Model
-    | CardCountInDeckChange Card.Card Int
+    | FilterChangedClan UI.Filter.Clan.Model
+    | FilterChangedCardBack UI.Filter.CardBack.Model
+    | DeckChanged Card.Card Int
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
@@ -77,7 +79,7 @@ update _ msg model =
         ( StrongholdSelected stronghold, ChoosingStronghold oldDeck ) ->
             let
                 filters =
-                    { byClan = UI.ClanFilterSelector.init, byType = [] }
+                    { byClan = UI.Filter.Clan.init, byCardBack = UI.Filter.CardBack.init }
 
                 newDeck =
                     Maybe.map (\deck -> { deck | stronghold = stronghold }) oldDeck
@@ -90,10 +92,13 @@ update _ msg model =
             in
             ( Deckbuilding newDeck filters, Cmd.none )
 
-        ( ClanFilterChanged clanFilters, Deckbuilding deck filters ) ->
-            ( Deckbuilding deck { filters | byClan = clanFilters }, Cmd.none )
+        ( FilterChangedClan newFilter, Deckbuilding deck oldFilters ) ->
+            ( Deckbuilding deck { oldFilters | byClan = newFilter }, Cmd.none )
 
-        ( CardCountInDeckChange card n, Deckbuilding deck filters ) ->
+        ( FilterChangedCardBack newFilter, Deckbuilding deck oldFilters ) ->
+            ( Deckbuilding deck { oldFilters | byCardBack = newFilter }, Cmd.none )
+
+        ( DeckChanged card n, Deckbuilding deck filters ) ->
             let
                 newDeck =
                     { deck | otherCards = Dict.insert (Card.id card) n deck.otherCards }
@@ -194,7 +199,10 @@ viewFilters : Filters -> Html Msg
 viewFilters filters =
     div [ class "filters" ]
         [ p [] [ text "Filters" ]
-        , UI.ClanFilterSelector.view filters.byClan ClanFilterChanged
+        , div [ class "filters-row" ]
+            [ UI.Filter.Clan.view filters.byClan FilterChangedClan
+            , UI.Filter.CardBack.view filters.byCardBack FilterChangedCardBack
+            ]
         ]
 
 
@@ -203,8 +211,8 @@ viewCardsOptions cards deck filters =
     let
         filteredCards =
             Dict.values cards
-                |> List.filter (Card.clan >> UI.ClanFilterSelector.isClanAllowed filters.byClan)
-                |> List.sortBy (\card -> -1 * (Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards))
+                |> List.filter (compositeFilter filters)
+                |> List.sortWith (compositeSort deck)
 
         cardTypeIcon card =
             case card of
@@ -250,7 +258,7 @@ viewCardsOptions cards deck filters =
                                         , input
                                             [ type_ "radio"
                                             , name <| Card.title card
-                                            , onClick <| CardCountInDeckChange card qty
+                                            , onClick <| DeckChanged card qty
                                             ]
                                             []
                                         ]
@@ -302,3 +310,84 @@ viewCardsOptions cards deck filters =
             , tbody [] (List.map cardRow filteredCards)
             ]
         ]
+
+
+compositeSort : Deck -> Card.Card -> Card.Card -> Order
+compositeSort deck a b =
+    let
+        selected card =
+            Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
+
+        cardType card =
+            case card of
+                Card.AttachmentType _ ->
+                    0
+
+                Card.CharacterType _ ->
+                    1
+
+                Card.EventType _ ->
+                    2
+
+                Card.HoldingType _ ->
+                    3
+
+                Card.ProvinceType _ ->
+                    4
+
+                Card.RoleType _ ->
+                    5
+
+                Card.StrongholdType _ ->
+                    6
+
+        cost card =
+            case Card.cost card of
+                Nothing ->
+                    0
+
+                Just Numerical.Dash ->
+                    1
+
+                Just Numerical.VariableValue ->
+                    2
+
+                Just Numerical.VariableModifier ->
+                    3
+
+                Just (Numerical.FixedValue n) ->
+                    100 + n
+
+                Just (Numerical.FixedModifier n) ->
+                    100 + n
+    in
+    case compare (selected a) (selected b) of
+        GT ->
+            LT
+
+        LT ->
+            GT
+
+        EQ ->
+            case compare (cardType a) (cardType b) of
+                GT ->
+                    GT
+
+                LT ->
+                    LT
+
+                EQ ->
+                    case compare (cost a) (cost b) of
+                        GT ->
+                            GT
+
+                        LT ->
+                            LT
+
+                        EQ ->
+                            EQ
+
+
+compositeFilter : Filters -> Card.Card -> Bool
+compositeFilter filters card =
+    (Card.clan card |> UI.Filter.Clan.isClanAllowed filters.byClan) && UI.Filter.CardBack.isBackAllowed filters.byCardBack card

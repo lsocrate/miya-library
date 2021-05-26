@@ -1,0 +1,113 @@
+@font-face {
+  font-family: IconFont;
+  src: url("/assets/icomoon.woff") format("woff");
+}
+
+.icon {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: IconFont !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+}
+
+.icon--medium {
+  font-size: 28px;
+}
+
+.icon-influence3plus:before {
+  content: "\e900";
+}
+.icon-influence4:before {
+  content: "\e901";
+}
+.icon-influence3:before {
+  content: "\e902";
+}
+.icon-influence2:before {
+  content: "\e903";
+}
+.icon-influence1:before {
+  content: "\e904";
+}
+.icon-seeker:before {
+  content: "\e905";
+}
+.icon-keeper:before {
+  content: "\e906";
+}
+.icon-fiverings:before {
+  content: "\e908";
+}
+.icon-neutral:before {
+  content: "\e909";
+}
+.icon-fate:before {
+  content: "\e90b";
+}
+.icon-honor:before {
+  content: "\e90c";
+}
+.icon-unique:before {
+  content: "\e90d";
+}
+.icon-void:before {
+  content: "\e90e";
+}
+.icon-water:before {
+  content: "\e90f";
+}
+.icon-fire:before {
+  content: "\e910";
+}
+.icon-air:before {
+  content: "\e911";
+}
+.icon-earth:before {
+  content: "\e912";
+}
+.icon-military:before {
+  content: "\e913";
+}
+.icon-political:before {
+  content: "\e914";
+}
+.icon-scorpion:before {
+  content: "\e915";
+}
+.icon-dragon:before {
+  content: "\e916";
+}
+.icon-unicorn:before {
+  content: "\e917";
+}
+.icon-phoenix:before {
+  content: "\e918";
+}
+.icon-lion:before {
+  content: "\e919";
+}
+.icon-crane:before {
+  content: "\e91a";
+}
+.icon-crab:before {
+  content: "\e91b";
+}
+.icon-ph1:before {
+  content: "\e91d";
+}
+.icon-ph2:before {
+  content: "\e91c";
+}
+.icon-ph3:before {
+  content: "\e91e";
+}
+.icon-ph4:before {
+  content: "\e91f";
+}
+.icon-shadowlands:before {
+  content: "\e920";
+}

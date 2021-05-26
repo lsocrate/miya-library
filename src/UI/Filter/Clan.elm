@@ -1,4 +1,4 @@
-module UI.ClanFilterSelector exposing (Model, init, isClanAllowed, view)
+module UI.Filter.Clan exposing (Model, init, isClanAllowed, view)
 
 import Clan exposing (Clan(..))
 import Html exposing (..)
