@@ -44,6 +44,7 @@
 }
 .icon-neutral:before {
   content: "\e909";
+  color: var(--color-neutral);
 }
 .icon-fate:before {
   content: "\e90b";
@@ -77,24 +78,31 @@
 }
 .icon-scorpion:before {
   content: "\e915";
+  color: var(--color-scorpion);
 }
 .icon-dragon:before {
   content: "\e916";
+  color: var(--color-dragon);
 }
 .icon-unicorn:before {
   content: "\e917";
+  color: var(--color-unicorn);
 }
 .icon-phoenix:before {
   content: "\e918";
+  color: var(--color-phoenix);
 }
 .icon-lion:before {
   content: "\e919";
+  color: var(--color-lion);
 }
 .icon-crane:before {
   content: "\e91a";
+  color: var(--color-crane);
 }
 .icon-crab:before {
   content: "\e91b";
+  color: var(--color-crab);
 }
 .icon-ph1:before {
   content: "\e91d";

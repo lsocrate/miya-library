@@ -6,7 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List
-import UI.Icon exposing (Icon(..))
+import UI.Icon as Icon
 
 
 type Model
@@ -37,7 +37,7 @@ view filters changeMsg =
                         ]
                     , onClick (changeMsg (toggleFilter filters back))
                     ]
-                    [ UI.Icon.medium Fiverings ]
+                    [ Icon.icon Icon.Medium Icon.Fiverings ]
                 ]
     in
     ul [ class "cardbackfilter" ] <| List.map option [ Dynasty, Conflict ]

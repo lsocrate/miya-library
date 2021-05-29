@@ -214,37 +214,13 @@ viewCardsOptions cards deck filters =
                 |> List.filter (compositeFilter filters)
                 |> List.sortWith (compositeSort deck)
 
-        cardTypeIcon card =
-            case card of
-                Card.StrongholdType _ ->
-                    "🏯"
-
-                Card.ProvinceType _ ->
-                    "⛰️"
-
-                Card.HoldingType _ ->
-                    "🏨"
-
-                Card.CharacterType _ ->
-                    "🧑"
-
-                Card.AttachmentType _ ->
-                    "🗡️"
-
-                Card.EventType _ ->
-                    "⚡"
-
-                Card.RoleType _ ->
-                    "📇"
-
         cardRow card =
             let
                 copiesInDeck =
                     Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
-            in
-            tr [ class "cardlist-row" ]
-                [ td [ class "cardlist-quantity" ]
-                    [ div [ class "cardlist-picker" ]
+
+                picker =
+                    div [ class "cardlist-picker" ]
                         (List.range 0 3
                             |> List.map
                                 (\qty ->
@@ -264,9 +240,11 @@ viewCardsOptions cards deck filters =
                                         ]
                                 )
                         )
-                    ]
-                , td [ class "cardlist-clan" ] [ text (Clan.icon <| Card.clan card) ]
-                , td [ class "cardlist-type" ] [ text (cardTypeIcon card) ]
+            in
+            tr [ class "cardlist-row" ]
+                [ td [ class "cardlist-quantity" ] [ picker ]
+                , td [ class "cardlist-clan" ] [ text <| Clan.icon <| Card.clan card ]
+                , td [ class "cardlist-type" ] [ text <| Card.typeIcon card ]
                 , td [ class "cardlist-title" ]
                     [ text (Card.title card)
                     , text <|
@@ -390,4 +368,5 @@ compositeSort deck a b =
 
 compositeFilter : Filters -> Card.Card -> Bool
 compositeFilter filters card =
-    (Card.clan card |> UI.Filter.Clan.isClanAllowed filters.byClan) && UI.Filter.CardBack.isBackAllowed filters.byCardBack card
+    (Card.clan card |> UI.Filter.Clan.isClanAllowed filters.byClan)
+        && UI.Filter.CardBack.isBackAllowed filters.byCardBack card

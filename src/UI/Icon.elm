@@ -1,6 +1,6 @@
-module UI.Icon exposing (Icon(..), medium)
+module UI.Icon exposing (Icon(..), icon,Size(..))
 
-import Html exposing (Html, i)
+import Html exposing (Attribute, Html, i)
 import Html.Attributes exposing (class)
 
 
@@ -38,103 +38,114 @@ type Icon
     | Ph4
 
 
-medium : Icon -> Html msg
-medium ico =
-    i [ class "icon", class "icon--medium", class <| iconClass ico ] []
+type Size
+    = Medium
 
 
-iconClass : Icon -> String
-iconClass ico =
+icon : Size -> Icon -> Html msg
+icon size ico =
+    i [ class "icon", classForSize size, classForIcon ico ] []
+
+
+classForSize : Size -> Attribute msg
+classForSize size =
+    case size of
+        Medium ->
+            class "icon--medium"
+
+
+classForIcon : Icon -> Attribute msg
+classForIcon ico =
     case ico of
         Influence3plus ->
-            "icon-influence3plus"
+            class "icon-influence3plus"
 
         Influence4 ->
-            "icon-influence4"
+            class "icon-influence4"
 
         Influence3 ->
-            "icon-influence3"
+            class "icon-influence3"
 
         Influence2 ->
-            "icon-influence2"
+            class "icon-influence2"
 
         Influence1 ->
-            "icon-influence1"
+            class "icon-influence1"
 
         Seeker ->
-            "icon-seeker"
+            class "icon-seeker"
 
         Keeper ->
-            "icon-keeper"
+            class "icon-keeper"
 
         Fiverings ->
-            "icon-fiverings"
+            class "icon-fiverings"
 
         Neutral ->
-            "icon-neutral"
+            class "icon-neutral"
 
         Fate ->
-            "icon-fate"
+            class "icon-fate"
 
         Honor ->
-            "icon-honor"
+            class "icon-honor"
 
         Unique ->
-            "icon-unique"
+            class "icon-unique"
 
         Void ->
-            "icon-void"
+            class "icon-void"
 
         Water ->
-            "icon-water"
+            class "icon-water"
 
         Fire ->
-            "icon-fire"
+            class "icon-fire"
 
         Air ->
-            "icon-air"
+            class "icon-air"
 
         Earth ->
-            "icon-earth"
+            class "icon-earth"
 
         Military ->
-            "icon-military"
+            class "icon-military"
 
         Political ->
-            "icon-political"
+            class "icon-political"
 
         Scorpion ->
-            "icon-scorpion"
+            class "icon-scorpion"
 
         Dragon ->
-            "icon-dragon"
+            class "icon-dragon"
 
         Unicorn ->
-            "icon-unicorn"
+            class "icon-unicorn"
 
         Phoenix ->
-            "icon-phoenix"
+            class "icon-phoenix"
 
         Lion ->
-            "icon-lion"
+            class "icon-lion"
 
         Crane ->
-            "icon-crane"
+            class "icon-crane"
 
         Crab ->
-            "icon-crab"
+            class "icon-crab"
 
         Ph1 ->
-            "icon-ph1"
+            class "icon-ph1"
 
         Ph2 ->
-            "icon-ph2"
+            class "icon-ph2"
 
         Ph3 ->
-            "icon-ph3"
+            class "icon-ph3"
 
         Ph4 ->
-            "icon-ph4"
+            class "icon-ph4"
 
         Shadowlands ->
-            "icon-shadowlands"
+            class "icon-shadowlands"

@@ -488,3 +488,28 @@ isUnique card =
 
         _ ->
             False
+
+
+typeIcon : Card -> String
+typeIcon card =
+    case card of
+        StrongholdType _ ->
+            "🏯"
+
+        ProvinceType _ ->
+            "⛰️"
+
+        HoldingType _ ->
+            "🏨"
+
+        CharacterType _ ->
+            "🧑"
+
+        AttachmentType _ ->
+            "🗡️"
+
+        EventType _ ->
+            "⚡"
+
+        RoleType _ ->
+            "📇"
