@@ -1,7 +1,7 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Gen.Params.Deckbuilder exposing (Params)
-import Gen.Params.Home exposing (Params)
+import Gen.Params.Home_ exposing (Params)
 import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
