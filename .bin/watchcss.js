@@ -15,7 +15,7 @@ async function createTempDir() {
 }
 
 async function startSassWatch() {
-  const sassFiles = chokidar.watch("src/**/*.scss", { persistent: true });
+  const sassFiles = chokidar.watch("src/**/*.sass", { persistent: true });
   sassFiles.on("all", (event, filePath) => {
     switch (event) {
       case "add":

@@ -1,0 +1,42 @@
+.cardbackfilter
+  margin: 0
+  padding: 0
+  display: grid
+  grid-template-columns: repeat(9, 40px)
+  grid-template-rows: 40px
+
+
+  &-item
+    display: block
+    border-width: 1px 1px 1px 0
+    border-color: var(--color-weak)
+    border-style: solid
+  &:first-child
+    border-width: 1px 1px 1px 1px
+
+
+  &-button
+    background: #fff
+    width: 100%
+    height: 100%
+    padding: 4px
+    border: 0
+    cursor: pointer
+
+
+  &-button--conflict
+    color: var(--color-conflict)
+
+
+  &-button--conflict.cardbackfilter-button--active
+    background: var(--color-conflict)
+    color: #fff
+
+
+  &-button--dynasty
+    color: var(--color-dynasty)
+
+
+  &-button--dynasty.cardbackfilter-button--active
+    background: var(--color-dynasty)
+    color: #fff

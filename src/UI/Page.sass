@@ -1,0 +1,47 @@
+body
+  align-content: stretch
+  background-color: var(--color-bg)
+  display: grid
+  gap: 20px
+  grid-template-columns: repeat(12, 1fr)
+  grid-template-rows: 80px auto 160px
+  justify-content: stretch
+  min-height: 100vh
+
+.page-header
+  background-color: var(--color-dark)
+  display: flex
+  padding: 20px
+  grid-column: 1 / 13
+  grid-row: 1 / 2
+
+.header-logo
+  flex: 0 0 200px
+
+.nav
+  flex: 1 1 auto
+
+  &-list
+    margin: 0
+    padding: 0
+
+  &-item
+    display: inline-block
+
+  a
+    color: #000
+    text-decoration: underline 2px var(--color-accent)
+
+.page-container
+  padding: 0 20px
+  grid-column: 1 / 13
+  grid-row: 2 / 3
+  display: grid
+  gap: 20px
+  grid-template-columns: repeat(12, 1fr)
+
+.page-footer
+  background-color: var(--color-strong)
+  grid-column: 1/13
+  grid-row: 3 / 4
+  padding: 20px 20px 40px

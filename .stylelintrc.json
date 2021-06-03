@@ -1,6 +1,0 @@
-{
-  "plugins": ["stylelint-selector-bem-pattern"],
-  "rules": {
-    "string-quotes": "double"
-  }
-}

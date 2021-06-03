@@ -9,7 +9,7 @@ const zlib = require("zlib");
 sass.compiler = require("sass");
 
 const sassConf = {
-  source: "./src/**/*.scss",
+  source: "./src/**/*.sass",
   destination: "./public/dist",
 };
 

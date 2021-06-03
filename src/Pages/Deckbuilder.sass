@@ -1,0 +1,83 @@
+// ------------
+// STRONGHOLD PICKER
+// ------------
+.strongholdpicker
+  grid-column: 1/13
+
+  &-options
+    margin: 0
+    padding: 0
+    display: grid
+    grid-template-columns: repeat(5, 1fr)
+    gap: 10px 15px
+    place-items: start center
+
+  &-item
+    list-style: none
+    cursor: pointer
+
+  img
+    max-width: 100%
+    max-height: 100%
+
+// ------------
+// STRUCTURE
+// ------------
+.deckbuilder-decklist
+  grid-column: 1/7
+
+.deckbuilder-builder
+  grid-column: 7/13
+
+// ------------
+// FILTERS
+// ------------
+.filters-row
+  display: flex
+
+// ------------
+// CARD PICKER
+// ------------
+.cardlist
+  width: 100%
+
+  &-option
+    background: #fff
+    display: inline-block
+    width: 20px
+    height: 20px
+    text-align: center
+    border-color: #000
+    border-style: solid
+    border-width: 1px 1px 1px 0
+    cursor: pointer
+
+  &:first-child
+    border-width: 1px
+
+  input
+    display: none
+
+  &-option--active
+    background: #fc0
+
+  &-quantity
+    width: 85px
+
+  &-clan,
+
+  &-type
+    width: 1rem
+    text-align: center
+
+  &-influence
+    width: 2rem
+    text-align: right
+
+  &-cost,
+  &-military,
+  &-political,
+  &-strength,
+  &-glory
+    width: 1.5rem
+    text-align: center
