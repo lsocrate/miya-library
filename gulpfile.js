@@ -4,6 +4,7 @@ const cleanCSS = require("gulp-clean-css");
 const concatCss = require("gulp-concat-css");
 const gulpBrotli = require("gulp-brotli");
 const gulpGzip = require("gulp-gzip");
+const zlib = require("zlib");
 
 sass.compiler = require("sass");
 
@@ -32,7 +33,15 @@ const optimizationOptions = {
 
 function brotli() {
   return src(optimizationOptions.source)
-    .pipe(gulpBrotli({ skipLarger: true }))
+    .pipe(
+      gulpBrotli({
+        skipLarger: true,
+        params: {
+          [zlib.constants.BROTLI_PARAM_QUALITY]:
+            zlib.constants.BROTLI_MAX_QUALITY,
+        },
+      })
+    )
     .pipe(dest(optimizationOptions.destination));
 }
 
