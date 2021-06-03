@@ -4,35 +4,37 @@
   "description": "> 🌳  built with [elm-spa](https://elm-spa.dev)",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build:js && npm run build:css",
     "build:css": "gulp sassBuild",
     "build:js": "elm-spa build",
-    "watch:styles": "node .bin/watchcss.js",
-    "start": "http-server ./public --gzip --brotli --port $PORT",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:optimize": "gulp optimize",
+    "build": "npm run build:js && npm run build:css && npm run build:optimize",
+    "start": "http-server ./public --utc --gzip --brotli --port $PORT --proxy \"http://localhost:$PORT?\"",
+    "watch:styles": "node .bin/watchcss.js"
   },
   "engines": {
     "node": "14.x",
     "npm": "6.x"
   },
   "author": "Luiz Socrate",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "chokidar": "^3.5.1",
+    "concat": "^1.0.3",
     "glob": "^7.1.7",
     "nodemon": "^2.0.7",
-    "prettier": "^2.2.1",
+    "prettier": "^2.3.0",
     "stylelint": "^13.13.1",
     "stylelint-config-sass-guidelines": "^8.0.0",
     "stylelint-selector-bem-pattern": "^2.1.0"
   },
   "dependencies": {
-    "concat": "^1.0.3",
     "elm-spa": "^6.0.4",
     "gulp": "^4.0.2",
+    "gulp-brotli": "^3.0.0",
     "gulp-clean-css": "^4.3.0",
     "gulp-cli": "^2.3.0",
     "gulp-concat-css": "^3.1.0",
+    "gulp-gzip": "^1.4.2",
     "gulp-sass": "^4.1.0",
     "http-server": "^0.12.3",
     "normalize.css": "^8.0.1",
