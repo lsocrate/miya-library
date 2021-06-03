@@ -1,4 +1,4 @@
-const { src, dest, parallel } = require("gulp");
+const { src, dest, parallel, watch } = require("gulp");
 const sass = require("gulp-sass");
 const cleanCSS = require("gulp-clean-css");
 const concatCss = require("gulp-concat-css");
@@ -19,6 +19,16 @@ function sassBuild() {
     .pipe(concatCss("styles.css"))
     .pipe(cleanCSS({ level: 2 }))
     .pipe(dest(sassConf.destination));
+}
+
+function processStyles() {
+  return src(sassConf.source)
+    .pipe(sass().on("error", sass.logError))
+    .pipe(concatCss("styles.css"))
+    .pipe(dest(sassConf.destination));
+}
+function watchStyles() {
+  return watch(sassConf.source, {ignoreInitial:false},processStyles)
 }
 
 const optimizationOptions = {
@@ -53,3 +63,4 @@ function gzip() {
 
 exports.sassBuild = sassBuild;
 exports.optimize = parallel(brotli, gzip);
+exports.watchStyles = watchStyles

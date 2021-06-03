@@ -1,5 +1,6 @@
 .DS_Store
 .elm-spa
+.vscode
 .tempcss
 *.br
 *.gz
