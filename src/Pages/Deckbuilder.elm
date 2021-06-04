@@ -196,11 +196,13 @@ viewCardsOptions cards deck filters =
     let
         filteredCards =
             Dict.values cards
-                |> List.filter (UI.Filters.compositeFilter filters)
                 |> List.sortWith (compositeSort deck)
 
         cardRow card =
             let
+                visible =
+                    UI.Filters.compositeFilter filters card
+
                 copiesInDeck =
                     Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
 
@@ -226,7 +228,12 @@ viewCardsOptions cards deck filters =
                                 )
                         )
             in
-            tr [ class "cardlist-row" ]
+            tr
+                [ classList
+                    [ ( "cardlist-row", True )
+                    , ( "cardlist-row--hidden", not visible )
+                    ]
+                ]
                 [ td [ class "cardlist-quantity" ] [ picker ]
                 , td [ class "cardlist-clan" ] [ text <| Clan.icon <| Card.clan card ]
                 , td [ class "cardlist-type" ] [ text <| Card.typeIcon card ]

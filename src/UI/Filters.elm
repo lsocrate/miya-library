@@ -199,37 +199,47 @@ view : Model -> (Model -> msg) -> List (Html msg)
 view model changeMsg =
     let
         clanToggle clan =
-            label [ class "clanfilter-item" ]
-                [ img [ src <| Clan.mon clan, alt <| Clan.name clan ] []
+            label
+                [ classList
+                    [ ( "filterblock-item", True )
+                    , ( "filterblock-item--active", isActiveClan model clan )
+                    ]
+                ]
+                [ img
+                    [ class "filterblock-icon"
+                    , src <| Clan.mon clan
+                    , alt <| Clan.name clan
+                    ]
+                    []
                 , input
                     [ type_ "checkbox"
-                    , classList
-                        [ ( "clanfilter-button", True )
-                        , ( "clanfilter-button--active", isActiveClan model clan )
-                        ]
                     , onCheck (changeMsg << toggleClan model clan)
                     ]
                     []
                 ]
 
         cardBackToggle cardBack =
-            label [ class "cardbackfilter-item" ]
-                [ Icon.icon Icon.Medium Icon.Fiverings
+            label
+                [ classList
+                    [ ( "filterblock-item", True )
+                    , ( "filterblock-item--conflict", cardBack == Conflict )
+                    , ( "filterblock-item--dynasty", cardBack == Dynasty )
+                    , ( "filterblock-item--active", isBackActive model cardBack )
+                    ]
+                ]
+                [ div
+                    [ class "filterblock-icon"
+                    ]
+                    [ Icon.icon Icon.Medium Icon.Fiverings ]
                 , input
                     [ type_ "checkbox"
-                    , classList
-                        [ ( "cardbackfilter-button", True )
-                        , ( "cardbackfilter-button--conflict", cardBack == Conflict )
-                        , ( "cardbackfilter-button--dynasty", cardBack == Dynasty )
-                        , ( "cardbackfilter-button--active", isBackActive model cardBack )
-                        ]
                     , onCheck (changeMsg << toggleBack model cardBack)
                     ]
                     []
                 ]
     in
-    [ div [ class "clanfilter" ] <| List.map clanToggle clanOptions
-    , div [ class "cardbackfilter" ] <| List.map cardBackToggle cardBackOptions
+    [ div [ class "filterblock" ] <| List.map clanToggle clanOptions
+    , div [ class "filterblock" ] <| List.map cardBackToggle cardBackOptions
     ]
 
 
