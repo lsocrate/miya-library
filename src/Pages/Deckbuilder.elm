@@ -13,8 +13,7 @@ import Page
 import Request
 import Shared
 import UI.Decklist
-import UI.Filter.CardBack
-import UI.Filter.Clan
+import UI.Filters
 import UI.Page
 import Url exposing (Protocol(..))
 import View exposing (View)
@@ -43,13 +42,9 @@ type alias Deck =
     }
 
 
-type alias Filters =
-    { byClan : UI.Filter.Clan.Model, byCardBack : UI.Filter.CardBack.Model }
-
-
 type Model
     = ChoosingStronghold (Maybe Deck)
-    | Deckbuilding Deck Filters
+    | Deckbuilding Deck UI.Filters.Model
 
 
 init : ( Model, Cmd Msg )
@@ -61,15 +56,14 @@ init =
         , role = Nothing
         , otherCards = Dict.empty
         }
-        { byClan = UI.Filter.Clan.init, byCardBack = UI.Filter.CardBack.init }
+        UI.Filters.init
     , Cmd.none
     )
 
 
 type Msg
     = StrongholdSelected String
-    | FilterChangedClan UI.Filter.Clan.Model
-    | FilterChangedCardBack UI.Filter.CardBack.Model
+    | Changed UI.Filters.Model
     | DeckChanged Card.Card Int
 
 
@@ -78,9 +72,6 @@ update _ msg model =
     case ( msg, model ) of
         ( StrongholdSelected stronghold, ChoosingStronghold oldDeck ) ->
             let
-                filters =
-                    { byClan = UI.Filter.Clan.init, byCardBack = UI.Filter.CardBack.init }
-
                 newDeck =
                     Maybe.map (\deck -> { deck | stronghold = stronghold }) oldDeck
                         |> Maybe.withDefault
@@ -90,13 +81,10 @@ update _ msg model =
                             , otherCards = Dict.empty
                             }
             in
-            ( Deckbuilding newDeck filters, Cmd.none )
+            ( Deckbuilding newDeck UI.Filters.init, Cmd.none )
 
-        ( FilterChangedClan newFilter, Deckbuilding deck oldFilters ) ->
-            ( Deckbuilding deck { oldFilters | byClan = newFilter }, Cmd.none )
-
-        ( FilterChangedCardBack newFilter, Deckbuilding deck oldFilters ) ->
-            ( Deckbuilding deck { oldFilters | byCardBack = newFilter }, Cmd.none )
+        ( Changed newFilters, Deckbuilding deck _ ) ->
+            ( Deckbuilding deck newFilters, Cmd.none )
 
         ( DeckChanged card n, Deckbuilding deck filters ) ->
             let
@@ -169,7 +157,7 @@ viewStrongholdSelector strongholds =
         ]
 
 
-viewDeckbuilder : Dict.Dict String Card.Card -> Deck -> Filters -> List (Html Msg)
+viewDeckbuilder : Dict.Dict String Card.Card -> Deck -> UI.Filters.Model -> List (Html Msg)
 viewDeckbuilder cards deck filters =
     let
         roleList =
@@ -195,23 +183,20 @@ viewDeckbuilder cards deck filters =
     ]
 
 
-viewFilters : Filters -> Html Msg
+viewFilters : UI.Filters.Model -> Html Msg
 viewFilters filters =
     div [ class "filters" ]
         [ p [] [ text "Filters" ]
-        , div [ class "filters-row" ]
-            [ UI.Filter.Clan.view filters.byClan FilterChangedClan
-            , UI.Filter.CardBack.view filters.byCardBack FilterChangedCardBack
-            ]
+        , div [ class "filters-row" ] (UI.Filters.view filters Changed)
         ]
 
 
-viewCardsOptions : Dict.Dict String Card.Card -> Deck -> Filters -> Html Msg
+viewCardsOptions : Dict.Dict String Card.Card -> Deck -> UI.Filters.Model -> Html Msg
 viewCardsOptions cards deck filters =
     let
         filteredCards =
             Dict.values cards
-                |> List.filter (compositeFilter filters)
+                |> List.filter (UI.Filters.compositeFilter filters)
                 |> List.sortWith (compositeSort deck)
 
         cardRow card =
@@ -364,9 +349,3 @@ compositeSort deck a b =
 
                         EQ ->
                             EQ
-
-
-compositeFilter : Filters -> Card.Card -> Bool
-compositeFilter filters card =
-    (Card.clan card |> UI.Filter.Clan.isClanAllowed filters.byClan)
-        && UI.Filter.CardBack.isBackAllowed filters.byCardBack card
