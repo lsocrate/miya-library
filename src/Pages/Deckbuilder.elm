@@ -8,6 +8,7 @@ import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Html.Keyed
 import Numerical
 import Page
 import Request
@@ -194,15 +195,8 @@ viewFilters filters =
 viewCardsOptions : Dict.Dict String Card.Card -> Deck -> UI.Filters.Model -> Html Msg
 viewCardsOptions cards deck filters =
     let
-        filteredCards =
-            Dict.values cards
-                |> List.sortWith (compositeSort deck)
-
         cardRow card =
             let
-                visible =
-                    UI.Filters.compositeFilter filters card
-
                 copiesInDeck =
                     Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
 
@@ -228,10 +222,21 @@ viewCardsOptions cards deck filters =
                                 )
                         )
             in
-            tr
+            ( Card.id card
+            , tr
                 [ classList
                     [ ( "cardlist-row", True )
-                    , ( "cardlist-row--hidden", not visible )
+                    , ( "cardlist-row--crab", Crab == Card.clan card )
+                    , ( "cardlist-row--crane", Crane == Card.clan card )
+                    , ( "cardlist-row--dragon", Dragon == Card.clan card )
+                    , ( "cardlist-row--lion", Lion == Card.clan card )
+                    , ( "cardlist-row--phoenix", Phoenix == Card.clan card )
+                    , ( "cardlist-row--scorpion", Scorpion == Card.clan card )
+                    , ( "cardlist-row--unicorn", Unicorn == Card.clan card )
+                    , ( "cardlist-row--neutral", Neutral == Card.clan card )
+                    , ( "cardlist-row--shadowlands", Shadowlands == Card.clan card )
+                    , ( "cardlist-row--conflict", Card.isConflict card )
+                    , ( "cardlist-row--dynasty", Card.isDynasty card )
                     ]
                 ]
                 [ td [ class "cardlist-quantity" ] [ picker ]
@@ -259,6 +264,7 @@ viewCardsOptions cards deck filters =
                 , td [ class "cardlist-strength" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.strength card ]
                 ]
+            )
     in
     div [ class "cards" ]
         [ p [] [ text "Cards" ]
@@ -277,7 +283,25 @@ viewCardsOptions cards deck filters =
                     , th [ class "cardlist-strength" ] [ text "S" ]
                     ]
                 ]
-            , tbody [] (List.map cardRow filteredCards)
+            , Html.Keyed.node "tbody"
+                [ classList
+                    [ ( "cardlist-filtered--crab", UI.Filters.isClanFilteredOut filters Crab )
+                    , ( "cardlist-filtered--crane", UI.Filters.isClanFilteredOut filters Crane )
+                    , ( "cardlist-filtered--dragon", UI.Filters.isClanFilteredOut filters Dragon )
+                    , ( "cardlist-filtered--lion", UI.Filters.isClanFilteredOut filters Lion )
+                    , ( "cardlist-filtered--phoenix", UI.Filters.isClanFilteredOut filters Phoenix )
+                    , ( "cardlist-filtered--scorpion", UI.Filters.isClanFilteredOut filters Scorpion )
+                    , ( "cardlist-filtered--unicorn", UI.Filters.isClanFilteredOut filters Unicorn )
+                    , ( "cardlist-filtered--neutral", UI.Filters.isClanFilteredOut filters Neutral )
+                    , ( "cardlist-filtered--shadowlands", UI.Filters.isClanFilteredOut filters Shadowlands )
+                    , ( "cardlist-filtered--conflict", UI.Filters.isConflictFilteredOut filters )
+                    , ( "cardlist-filtered--dynasty", UI.Filters.isDynastyFilteredOut filters )
+                    ]
+                ]
+                (Dict.values cards
+                    |> List.sortWith (compositeSort deck)
+                    |> List.map cardRow
+                )
             ]
         ]
 

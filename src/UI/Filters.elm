@@ -1,10 +1,9 @@
-module UI.Filters exposing (..)
+module UI.Filters exposing (Model, init, isClanFilteredOut, isConflictFilteredOut, isDynastyFilteredOut, view)
 
-import Card exposing (Card)
 import Clan exposing (Clan(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onCheck, onClick)
+import Html.Events exposing (onCheck)
 import UI.Icon as Icon
 
 
@@ -156,39 +155,22 @@ toggleBack model back value =
     { model | byBack = newByBack }
 
 
-compositeFilter : Model -> Card -> Bool
-compositeFilter model card =
-    let
-        isClanOk =
-            (model.byClan == noClanFilter)
-                || (isActiveClan model <| Card.clan card)
+isClanFilteredOut : Model -> Clan.Clan -> Bool
+isClanFilteredOut model clan =
+    (model.byClan /= noClanFilter)
+        && not (isActiveClan model clan)
 
-        isBackOk =
-            (model.byBack == noBackFilter)
-                || (case card of
-                        Card.AttachmentType (Card.Attachment _) ->
-                            isBackActive model Conflict
 
-                        Card.CharacterType (Card.ConflictCharacter _) ->
-                            isBackActive model Conflict
+isDynastyFilteredOut : Model -> Bool
+isDynastyFilteredOut model =
+    (model.byBack /= noBackFilter)
+        && not (isBackActive model Dynasty)
 
-                        Card.EventType (Card.ConflictEvent _) ->
-                            isBackActive model Conflict
 
-                        Card.EventType (Card.DynastyEvent _) ->
-                            isBackActive model Dynasty
-
-                        Card.HoldingType (Card.Holding _) ->
-                            isBackActive model Dynasty
-
-                        Card.CharacterType (Card.DynastyCharacter _) ->
-                            isBackActive model Dynasty
-
-                        _ ->
-                            False
-                   )
-    in
-    isClanOk && isBackOk
+isConflictFilteredOut : Model -> Bool
+isConflictFilteredOut model =
+    (model.byBack /= noBackFilter)
+        && not (isBackActive model Conflict)
 
 
 

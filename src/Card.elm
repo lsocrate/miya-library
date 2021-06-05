@@ -513,3 +513,35 @@ typeIcon card =
 
         RoleType _ ->
             "📇"
+
+
+isConflict : Card -> Bool
+isConflict card =
+    case card of
+        AttachmentType (Attachment _) ->
+            True
+
+        CharacterType (ConflictCharacter _) ->
+            True
+
+        EventType (ConflictEvent _) ->
+            True
+
+        _ ->
+            False
+
+
+isDynasty : Card -> Bool
+isDynasty card =
+    case card of
+        CharacterType (DynastyCharacter _) ->
+            True
+
+        EventType (DynastyEvent _) ->
+            True
+
+        HoldingType (Holding _) ->
+            True
+
+        _ ->
+            False
