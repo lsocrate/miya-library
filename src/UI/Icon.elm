@@ -1,6 +1,6 @@
 module UI.Icon exposing (Icon(..), Size(..), icon)
 
-import Html exposing (Attribute, Html, i)
+import Html exposing (Attribute, Html, i, text)
 import Html.Attributes exposing (class)
 
 
@@ -36,6 +36,10 @@ type Icon
     | Ph2
     | Ph3
     | Ph4
+    | Character
+    | Attachment
+    | Event
+    | Holding
 
 
 type Size
@@ -44,7 +48,21 @@ type Size
 
 icon : Size -> Icon -> Html msg
 icon size ico =
-    i [ class "icon", classForSize size, classForIcon ico ] []
+    case ico of
+        Character ->
+            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "person" ]
+
+        Attachment ->
+            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "attach_file" ]
+
+        Event ->
+            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "bolt" ]
+
+        Holding ->
+            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "home" ]
+
+        _ ->
+            i [ class "icon", classForSize size, classForIcon ico ] []
 
 
 classForSize : Size -> Attribute msg
@@ -149,3 +167,6 @@ classForIcon ico =
 
         Shadowlands ->
             class "icon-shadowlands"
+
+        _ ->
+            class ""
