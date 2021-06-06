@@ -80,4 +80,4 @@ function compressImages() {
 exports.sassBuild = sassBuild;
 exports.optimize = parallel(brotli, gzip);
 exports.watchStyles = watchStyles
-exports.compressImages = compressImages()
+exports.compressImages = compressImages;

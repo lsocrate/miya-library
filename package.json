@@ -8,6 +8,8 @@
     "build:js": "elm-spa build",
     "build:optimize": "gulp optimize",
     "build": "npm run build:js && npm run build:css && npm run build:optimize",
+    "compressImages": "gulp compressImages",
+    "datafetch": "node bin/datafetch.js",
     "start": "http-server ./public --utc --gzip --brotli --port $PORT --proxy \"http://localhost:$PORT?\"",
     "watch:styles": "gulp watchStyles"
   },

@@ -57,7 +57,7 @@ async function main () {
 
   await writeFile("./public/assets/cards.json", JSON.stringify(cards))
 
-  await map(cards.slice(0,10), {concurrency:5}, async (card) => {
+  await map(cards, {concurrency:5}, async (card) => {
     const ext = path.extname(card.image)
     const folder = path.join( __dirname,"..",'public','assets' )
     const filename = `card-${card.id}${ext}`
