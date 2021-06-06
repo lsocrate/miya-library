@@ -237,6 +237,10 @@ viewCardsOptions cards deck filters =
                     , ( "cardlist-row--shadowlands", Shadowlands == Card.clan card )
                     , ( "cardlist-row--conflict", Card.isConflict card )
                     , ( "cardlist-row--dynasty", Card.isDynasty card )
+                    , ( "cardlist-row--character", Card.isCharacter card )
+                    , ( "cardlist-row--attachment", Card.isAttachment card )
+                    , ( "cardlist-row--event", Card.isEvent card )
+                    , ( "cardlist-row--holding", Card.isHolding card )
                     ]
                 ]
                 [ td [ class "cardlist-quantity" ] [ picker ]
@@ -296,6 +300,10 @@ viewCardsOptions cards deck filters =
                     , ( "cardlist-filtered--shadowlands", UI.Filters.isClanFilteredOut filters Shadowlands )
                     , ( "cardlist-filtered--conflict", UI.Filters.isConflictFilteredOut filters )
                     , ( "cardlist-filtered--dynasty", UI.Filters.isDynastyFilteredOut filters )
+                    , ( "cardlist-filtered--character", UI.Filters.isCharacterFilteredOut filters )
+                    , ( "cardlist-filtered--attachment", UI.Filters.isAttachmentFilteredOut filters )
+                    , ( "cardlist-filtered--event", UI.Filters.isEventFilteredOut filters )
+                    , ( "cardlist-filtered--holding", UI.Filters.isHoldingFilteredOut filters )
                     ]
                 ]
                 (Dict.values cards

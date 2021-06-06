@@ -545,3 +545,43 @@ isDynasty card =
 
         _ ->
             False
+
+
+isCharacter : Card -> Bool
+isCharacter card =
+    case card of
+        CharacterType _ ->
+            True
+
+        _ ->
+            False
+
+
+isAttachment : Card -> Bool
+isAttachment card =
+    case card of
+        AttachmentType _ ->
+            True
+
+        _ ->
+            False
+
+
+isEvent : Card -> Bool
+isEvent card =
+    case card of
+        EventType _ ->
+            True
+
+        _ ->
+            False
+
+
+isHolding : Card -> Bool
+isHolding card =
+    case card of
+        HoldingType _ ->
+            True
+
+        _ ->
+            False
