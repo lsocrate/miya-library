@@ -42,7 +42,7 @@ view deck =
                     ]
                 , div [ class "decklist-stronghold" ]
                     [ img
-                        [ src <| Maybe.withDefault "http://placekitten.com/300/419" stronghold.image
+                        [ src stronghold.image
                         , attribute "loading" "lazy"
                         ]
                         []

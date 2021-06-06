@@ -15,14 +15,14 @@ import String
 fetchCards : (Result Http.Error (Dict.Dict String Card.Card) -> msg) -> Cmd msg
 fetchCards msg =
     Http.get
-        { url = "https://api.fiveringsdb.com/cards"
+        { url = "/assets/cards.json"
         , expect = Http.expectJson msg cardsDecoder
         }
 
 
 cardsDecoder : Decoder (Dict.Dict String Card.Card)
 cardsDecoder =
-    field "records" (list card)
+    list card
         |> map (List.filterMap <| Maybe.map toCardIdTuple)
         |> map Dict.fromList
 
@@ -473,24 +473,24 @@ uniqueness =
     required "unicity" <| map toUnique bool
 
 
-cycle : Decoder (Maybe String -> b) -> Decoder b
+cycle : Decoder (String -> b) -> Decoder b
 cycle =
-    required "pack_cards" <| maybe (index 0 (field "pack" (field "id" string)))
+    required "cycle" string
 
 
-cardNumber : Decoder (Maybe String -> b) -> Decoder b
+cardNumber : Decoder (String -> b) -> Decoder b
 cardNumber =
-    required "pack_cards" <| maybe (index 0 (field "position" string))
+    required "card_number" string
 
 
-artist : Decoder (Maybe String -> b) -> Decoder b
+artist : Decoder (String -> b) -> Decoder b
 artist =
-    required "pack_cards" <| maybe (index 0 (field "illustrator" string))
+    required "artist" string
 
 
-image : Decoder (Maybe String -> b) -> Decoder b
+image : Decoder (String -> b) -> Decoder b
 image =
-    required "pack_cards" <| maybe (index 0 (field "image_url" string))
+    required "id" <| map (\cardId -> "/assets/card-" ++ cardId ++ ".webp") string
 
 
 clan : Decoder (Clan.Clan -> b) -> Decoder b

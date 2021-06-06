@@ -145,7 +145,7 @@ viewStrongholdSelector strongholds =
         strongholdOption strongholdProps =
             li [ class "strongholdpicker-item", onClick (StrongholdSelected strongholdProps.id) ]
                 [ img
-                    [ src <| Maybe.withDefault "http://placekitten.com/300/419" strongholdProps.image
+                    [ src strongholdProps.image
                     , attribute "loading" "lazy"
                     ]
                     []

@@ -109,10 +109,10 @@ type alias RoleProps =
     , traits : List RoleTypes
     , abilities : List String
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -127,10 +127,10 @@ type alias StrongholdProps =
     , influenceValue : Int
     , abilities : List String
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -145,10 +145,10 @@ type alias ProvinceProps =
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -161,10 +161,10 @@ type alias DynastyEventProps =
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -178,10 +178,10 @@ type alias ConflictEventProps =
     , influenceCost : Maybe Int
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -195,10 +195,10 @@ type alias HoldingProps =
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -215,10 +215,10 @@ type alias AttachmentProps =
     , influenceCost : Maybe Int
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -235,10 +235,10 @@ type alias DynastyCharacterProps =
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
@@ -256,10 +256,10 @@ type alias ConflictCharacterProps =
     , influenceCost : Maybe Int
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format
-    , image : Maybe String
-    , cycle : Maybe String
-    , cardNumber : Maybe String
-    , artist : Maybe String
+    , image : String
+    , cycle : String
+    , cardNumber : String
+    , artist : String
     }
 
 
