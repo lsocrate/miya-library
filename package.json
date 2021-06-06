@@ -21,6 +21,7 @@
     "prettier": "^2.3.0"
   },
   "dependencies": {
+    "already": "^1.13.2",
     "elm-spa": "^6.0.4",
     "gulp": "^4.0.2",
     "gulp-brotli": "^3.0.0",
@@ -29,7 +30,10 @@
     "gulp-concat-css": "^3.1.0",
     "gulp-gzip": "^1.4.2",
     "gulp-sass": "^4.1.0",
+    "gulp-webp": "^4.0.1",
     "http-server": "^0.12.3",
+    "mappersmith": "^2.34.0",
+    "node-downloader-helper": "^1.0.18",
     "normalize.css": "^8.0.1",
     "sass": "^1.34.1"
   }

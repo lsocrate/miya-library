@@ -5,6 +5,7 @@ const concatCss = require("gulp-concat-css");
 const gulpBrotli = require("gulp-brotli");
 const gulpGzip = require("gulp-gzip");
 const zlib = require("zlib");
+const webp = require('gulp-webp');
 
 sass.compiler = require("sass");
 
@@ -31,10 +32,11 @@ function watchStyles() {
   return watch(sassConf.source, {ignoreInitial:false},processStyles)
 }
 
-const optimizationOptions = {
+const compressTxtOpts = {
   source: [
     "./public/**/*.html",
     "./public/**/*.js",
+    "./public/**/*.json",
     "./public/**/*.css",
     "./public/**/*.svg",
   ],
@@ -42,7 +44,7 @@ const optimizationOptions = {
 };
 
 function brotli() {
-  return src(optimizationOptions.source)
+  return src(compressTxtOpts.source)
     .pipe(
       gulpBrotli({
         skipLarger: true,
@@ -52,15 +54,29 @@ function brotli() {
         },
       })
     )
-    .pipe(dest(optimizationOptions.destination));
+    .pipe(dest(compressTxtOpts.destination));
 }
 
 function gzip() {
-  return src(optimizationOptions.source)
+  return src(compressTxtOpts.source)
     .pipe(gulpGzip({ skipGrowingFiles: true, gzipOptions: { level: 9 } }))
-    .pipe(dest(optimizationOptions.destination));
+    .pipe(dest(compressTxtOpts.destination));
+}
+
+const compressImgOpts = {
+  source: [
+    "./public/**/*.jpg",
+    "./public/**/*.png",
+  ],
+  destination: "./public",
+
+}
+
+function compressImages() {
+  return src(compressImgOpts.source).pipe(webp({method:6})).pipe(dest(compressImgOpts.destination))
+
 }
 
 exports.sassBuild = sassBuild;
-exports.optimize = parallel(brotli, gzip);
+exports.optimize = parallel(brotli, gzip, compressImages);
 exports.watchStyles = watchStyles
