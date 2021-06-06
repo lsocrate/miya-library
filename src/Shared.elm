@@ -42,14 +42,8 @@ update _ msg model =
                 Ok cards ->
                     ( Loaded { cards = cards, user = Nothing }, Cmd.none )
 
-                Err a ->
-                    case a of
-                        Http.BadBody d ->
-                            Debug.log d
-                                ( Error, Cmd.none )
-
-                        _ ->
-                            ( Error, Cmd.none )
+                Err _ ->
+                    ( Error, Cmd.none )
 
         ( _, _ ) ->
             ( model, Cmd.none )

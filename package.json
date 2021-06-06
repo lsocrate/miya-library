@@ -20,6 +20,8 @@
   "author": "Luiz Socrate",
   "license": "MIT",
   "devDependencies": {
+    "mappersmith": "^2.34.0",
+    "node-downloader-helper": "^1.0.18",
     "prettier": "^2.3.0"
   },
   "dependencies": {
@@ -34,8 +36,6 @@
     "gulp-sass": "^4.1.0",
     "gulp-webp": "^4.0.1",
     "http-server": "^0.12.3",
-    "mappersmith": "^2.34.0",
-    "node-downloader-helper": "^1.0.18",
     "normalize.css": "^8.0.1",
     "sass": "^1.34.1"
   }
