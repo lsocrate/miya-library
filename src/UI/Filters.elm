@@ -292,12 +292,7 @@ view model changeMsg =
                     , ( "filterblock-item--active", isActiveClan model clan )
                     ]
                 ]
-                [ img
-                    [ class "filterblock-icon"
-                    , src <| Clan.mon clan
-                    , alt <| Clan.name clan
-                    ]
-                    []
+                [ Icon.medium <| Icon.clan clan
                 , input
                     [ type_ "checkbox"
                     , onCheck (changeMsg << toggleClan model clan)
@@ -316,7 +311,7 @@ view model changeMsg =
                 ]
                 [ div
                     [ class "filterblock-icon" ]
-                    [ Icon.icon Icon.Medium Icon.Fiverings ]
+                    [ Icon.medium Icon.Fiverings ]
                 , input
                     [ type_ "checkbox"
                     , onCheck (changeMsg << toggleBack model cardBack)
@@ -335,7 +330,7 @@ view model changeMsg =
                 ]
                 [ div
                     [ class "filterblock-icon" ]
-                    [ Icon.icon Icon.Medium
+                    [ Icon.medium
                         (case cardType of
                             Character ->
                                 Icon.Character
@@ -357,7 +352,7 @@ view model changeMsg =
                     []
                 ]
     in
-    [ div [ class "filterblock" ] <|
+    [ div [ class "filterblock", class "filterblock--clans" ] <|
         List.map clanToggle
             [ Crab
             , Crane
@@ -369,10 +364,10 @@ view model changeMsg =
             , Neutral
             , Shadowlands
             ]
-    , div [ class "filterblock" ] <|
+    , div [ class "filterblock", class "filterblock--backs" ] <|
         List.map cardBackToggle
             [ Dynasty, Conflict ]
-    , div [ class "filterblock" ] <|
+    , div [ class "filterblock", class "filterblock--types" ] <|
         List.map cardTypeToggle
             [ Character, Attachment, Event, Holding ]
     ]

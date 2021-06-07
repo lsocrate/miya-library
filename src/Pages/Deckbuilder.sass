@@ -24,16 +24,21 @@
 // STRUCTURE
 // ------------
 .deckbuilder-decklist
-  grid-column: 1/7
+  grid-column: 1/13
+  @media screen and ( min-width: 1024px)
+    grid-column: 1/7
 
 .deckbuilder-builder
-  grid-column: 7/13
+  grid-column: 1/13
+  @media screen and ( min-width: 1024px)
+    grid-column: 7/13
 
 // ------------
 // FILTERS
 // ------------
 .filters-row
   display: flex
+  flex-wrap: wrap
 
 // ------------
 // CARD PICKER
@@ -52,17 +57,18 @@
     border-width: 1px 1px 1px 0
     cursor: pointer
 
+    &--active
+      background: #fc0
+
   &:first-child
     border-width: 1px
 
   input
     display: none
 
-  &-option--active
-    background: #fc0
-
   &-quantity
     width: 85px
+    user-select: none
 
   &-clan,
 
@@ -81,6 +87,7 @@
   &-glory
     width: 1.5rem
     text-align: center
+    user-select: none
 
 .cardlist-filtered--crab
   .cardlist-row--crab

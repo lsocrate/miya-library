@@ -1,13 +1,8 @@
-module Format exposing (..)
+module Format exposing (Format(..))
 
 
 type Format
-    = Stronghold RL
+    = Stronghold
     | Skirmish
     | Enlightenment
     | DraftFormat
-
-
-type RL
-    = Imperial
-    | Jade

@@ -1,5 +1,6 @@
-module UI.Icon exposing (Icon(..), Size(..), icon)
+module UI.Icon exposing (Icon(..), clan, medium, small)
 
+import Clan
 import Html exposing (Attribute, Html, i, text)
 import Html.Attributes exposing (class)
 
@@ -42,34 +43,64 @@ type Icon
     | Holding
 
 
-type Size
-    = Medium
+clan : Clan.Clan -> Icon
+clan c =
+    case c of
+        Clan.Crab ->
+            Crab
+
+        Clan.Crane ->
+            Crane
+
+        Clan.Dragon ->
+            Dragon
+
+        Clan.Lion ->
+            Lion
+
+        Clan.Phoenix ->
+            Phoenix
+
+        Clan.Scorpion ->
+            Scorpion
+
+        Clan.Unicorn ->
+            Unicorn
+
+        Clan.Neutral ->
+            Neutral
+
+        Clan.Shadowlands ->
+            Shadowlands
 
 
-icon : Size -> Icon -> Html msg
-icon size ico =
+small : Icon -> Html msg
+small =
+    icon (class "icon--small")
+
+
+medium : Icon -> Html msg
+medium =
+    icon (class "icon--medium")
+
+
+icon : Attribute msg -> Icon -> Html msg
+icon classForSize ico =
     case ico of
         Character ->
-            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "person" ]
+            i [ class "material-icons", classForSize ] [ text "person" ]
 
         Attachment ->
-            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "attach_file" ]
+            i [ class "material-icons", classForSize ] [ text "attach_file" ]
 
         Event ->
-            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "bolt" ]
+            i [ class "material-icons", classForSize ] [ text "bolt" ]
 
         Holding ->
-            i [ class "material-icons", classForSize size, classForIcon ico ] [ text "home" ]
+            i [ class "material-icons", classForSize ] [ text "home" ]
 
         _ ->
-            i [ class "icon", classForSize size, classForIcon ico ] []
-
-
-classForSize : Size -> Attribute msg
-classForSize size =
-    case size of
-        Medium ->
-            class "icon--medium"
+            i [ class "icon", classForSize, classForIcon ico ] []
 
 
 classForIcon : Icon -> Attribute msg

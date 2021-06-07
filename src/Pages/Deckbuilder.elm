@@ -15,6 +15,7 @@ import Request
 import Shared
 import UI.Decklist
 import UI.Filters
+import UI.Icon
 import UI.Page
 import Url exposing (Protocol(..))
 import View exposing (View)
@@ -204,18 +205,18 @@ viewCardsOptions cards deck filters =
                     div [ class "cardlist-picker" ]
                         (List.range 0 3
                             |> List.map
-                                (\qty ->
+                                (\n ->
                                     label
                                         [ classList
                                             [ ( "cardlist-option", True )
-                                            , ( "cardlist-option--active", qty == copiesInDeck )
+                                            , ( "cardlist-option--active", n == copiesInDeck )
                                             ]
                                         ]
-                                        [ text <| String.fromInt qty
+                                        [ text <| String.fromInt n
                                         , input
                                             [ type_ "radio"
                                             , name <| Card.title card
-                                            , onClick <| DeckChanged card qty
+                                            , onClick <| DeckChanged card n
                                             ]
                                             []
                                         ]
@@ -244,7 +245,7 @@ viewCardsOptions cards deck filters =
                     ]
                 ]
                 [ td [ class "cardlist-quantity" ] [ picker ]
-                , td [ class "cardlist-clan" ] [ text <| Clan.icon <| Card.clan card ]
+                , td [ class "cardlist-clan" ] [ UI.Icon.small <| UI.Icon.clan <| Card.clan card ]
                 , td [ class "cardlist-type" ] [ text <| Card.typeIcon card ]
                 , td [ class "cardlist-title" ]
                     [ text (Card.title card)
@@ -256,7 +257,22 @@ viewCardsOptions cards deck filters =
                             ""
                     ]
                 , td [ class "cardlist-influence" ]
-                    [ text <| Maybe.withDefault "" <| Maybe.map (\n -> String.repeat n "/") <| Card.influence card ]
+                    (case Card.influence card of
+                        Just 1 ->
+                            [ UI.Icon.small UI.Icon.Influence1 ]
+
+                        Just 2 ->
+                            [ UI.Icon.small UI.Icon.Influence2 ]
+
+                        Just 3 ->
+                            [ UI.Icon.small UI.Icon.Influence3 ]
+
+                        Just 4 ->
+                            [ UI.Icon.small UI.Icon.Influence4 ]
+
+                        _ ->
+                            []
+                    )
                 , td [ class "cardlist-cost" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.cost card ]
                 , td [ class "cardlist-military" ]
@@ -279,10 +295,10 @@ viewCardsOptions cards deck filters =
                     , th [ class "cardlist-clan" ] []
                     , th [ class "cardlist-type" ] []
                     , th [ class "cardlist-title" ] [ text "Title" ]
-                    , th [ class "cardlist-influence" ] []
-                    , th [ class "cardlist-cost" ] [ text "C" ]
-                    , th [ class "cardlist-military" ] [ text "M" ]
-                    , th [ class "cardlist-political" ] [ text "P" ]
+                    , th [ class "cardlist-influence" ] [ UI.Icon.small UI.Icon.Influence1 ]
+                    , th [ class "cardlist-cost" ] [ UI.Icon.small UI.Icon.Fate ]
+                    , th [ class "cardlist-military" ] [ UI.Icon.small UI.Icon.Military ]
+                    , th [ class "cardlist-political" ] [ UI.Icon.small UI.Icon.Political ]
                     , th [ class "cardlist-glory" ] [ text "G" ]
                     , th [ class "cardlist-strength" ] [ text "S" ]
                     ]
