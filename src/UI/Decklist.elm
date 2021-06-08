@@ -3,6 +3,7 @@ module UI.Decklist exposing (Model, view)
 import Card
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import UI.Icon
 
 
 type alias DecklistEntry c =
@@ -13,76 +14,81 @@ type alias Model =
     { name : Maybe String
     , author : String
     , cards : List (DecklistEntry Card.Card)
+    , stronghold : Card.Stronghold
     }
 
 
 view : Model -> Html msg
 view deck =
     let
-        firstCard =
-            List.head >> Maybe.map Tuple.first
-
-        grouped =
+        { provinces, conflictAttachments, conflictCharacters, role, conflictEvents, dynastyCharacters, dynastyEvents, dynastyHoldings } =
             partition deck.cards
 
-        role =
-            firstCard grouped.roles
-
-        { provinces, conflictAttachments, conflictCharacters, conflictEvents, dynastyCharacters, dynastyEvents, dynastyHoldings } =
-            grouped
+        stronghold =
+            case deck.stronghold of
+                Card.Stronghold sh ->
+                    sh
     in
-    case firstCard grouped.strongholds of
-        Nothing ->
-            div [] []
-
-        Just stronghold ->
-            div [ class "decklist", id "decklist" ]
-                [ div [ class "decklist-name" ]
-                    [ text <| Maybe.withDefault "Unnamed" deck.name ++ " by " ++ deck.author
-                    ]
-                , div [ class "decklist-stronghold" ]
-                    [ img
-                        [ src stronghold.image
-                        , attribute "loading" "lazy"
-                        ]
-                        []
-                    ]
-                , div [ class "decklist-header" ]
-                    [ h2 [] [ text stronghold.title ]
-                    , h3 [] [ text <| Maybe.withDefault "" <| Maybe.map .title role ]
-                    , ul [] <| List.map (\( province, _ ) -> li [] [ text <| province.title ++ " " ++ (String.join "/" <| List.map Card.elementName province.elements) ]) provinces
-                    ]
-                , div [ class "decklist-dynasty_deck" ]
-                    (div []
-                        [ text <|
-                            "Dynasty Deck ("
-                                ++ String.fromInt
-                                    (sumCards dynastyCharacters
-                                        + sumCards dynastyHoldings
-                                        + sumCards dynastyEvents
-                                    )
-                                ++ ")"
-                        ]
-                        :: cardBlock "Characters" dynastyCharacters
-                        ++ cardBlock "Events" dynastyEvents
-                        ++ cardBlock "Holdings" dynastyHoldings
-                    )
-                , div [ class "decklist-conflict_deck" ]
-                    (div []
-                        [ text <|
-                            "Conflict Deck ("
-                                ++ String.fromInt
-                                    (sumCards conflictAttachments
-                                        + sumCards conflictCharacters
-                                        + sumCards conflictEvents
-                                    )
-                                ++ ")"
-                        ]
-                        :: cardBlock "Attachments" conflictAttachments
-                        ++ cardBlock "Characters" conflictCharacters
-                        ++ cardBlock "Events" conflictEvents
-                    )
+    div [ class "decklist" ]
+        [ div [ class "decklist-stronghold" ]
+            [ img
+                [ src stronghold.image
+                , attribute "loading" "lazy"
                 ]
+                []
+            ]
+        , div [ class "decklist-header" ]
+            [ h1 [ class "decklist-title" ] [ text <| Maybe.withDefault "Unnamed" deck.name ]
+            , p [ class "decklist-byline" ] [ text <| "By " ++ deck.author ]
+            , h2 [ class "decklist-synth" ]
+                [ strong [] [ text <| stronghold.title ]
+                , text " - "
+                , text <| Maybe.withDefault "" <| Maybe.map .title role
+                ]
+            , p [] [ text "Influence" ]
+            , ul [ class "decklist-provincelist" ] <| provinceEntry provinces
+            ]
+        , div [ class "decklist-dynasty_deck" ]
+            (div []
+                [ text "Dynasty Deck ("
+                , text <| String.fromInt (sumCards dynastyCharacters + sumCards dynastyHoldings + sumCards dynastyEvents)
+                , text ")"
+                ]
+                :: cardBlock "Characters" dynastyCharacters
+                ++ cardBlock "Events" dynastyEvents
+                ++ cardBlock "Holdings" dynastyHoldings
+            )
+        , div [ class "decklist-conflict_deck" ]
+            (div []
+                [ text "Conflict Deck ("
+                , text <| String.fromInt (sumCards conflictAttachments + sumCards conflictCharacters + sumCards conflictEvents)
+                , text ")"
+                ]
+                :: cardBlock "Attachments" conflictAttachments
+                ++ cardBlock "Characters" conflictCharacters
+                ++ cardBlock "Events" conflictEvents
+            )
+        ]
+
+
+provinceEntry : List Card.ProvinceProps -> List (Html msg)
+provinceEntry =
+    List.map
+        (\province ->
+            li [ class "decklist-province" ]
+                (text province.title
+                    :: (case province.element of
+                            Card.Single el ->
+                                [ UI.Icon.small <| UI.Icon.element el ]
+
+                            Card.Double el1 el2 ->
+                                [ UI.Icon.small <| UI.Icon.element el1, UI.Icon.small <| UI.Icon.element el2 ]
+
+                            Card.Tomoe ->
+                                [ UI.Icon.small UI.Icon.Fiverings ]
+                       )
+                )
+        )
 
 
 cardBlock : String -> List (DecklistEntry { t | title : String }) -> List (Html msg)
@@ -112,9 +118,8 @@ sumCards =
 partition :
     List (DecklistEntry Card.Card)
     ->
-        { strongholds : List (DecklistEntry Card.StrongholdProps)
-        , roles : List (DecklistEntry Card.RoleProps)
-        , provinces : List (DecklistEntry Card.ProvinceProps)
+        { role : Maybe Card.RoleProps
+        , provinces : List Card.ProvinceProps
         , conflictAttachments : List (DecklistEntry Card.AttachmentProps)
         , conflictEvents : List (DecklistEntry Card.ConflictEventProps)
         , conflictCharacters : List (DecklistEntry Card.ConflictCharacterProps)
@@ -127,10 +132,7 @@ partition =
         intoCategories ( card, n ) categories =
             case card of
                 Card.RoleType (Card.Role props) ->
-                    { categories | roles = ( props, n ) :: categories.roles }
-
-                Card.StrongholdType (Card.Stronghold props) ->
-                    { categories | strongholds = ( props, n ) :: categories.strongholds }
+                    { categories | role = Just props }
 
                 Card.AttachmentType (Card.Attachment props) ->
                     { categories | conflictAttachments = ( props, n ) :: categories.conflictAttachments }
@@ -151,6 +153,9 @@ partition =
                     { categories | dynastyHoldings = ( props, n ) :: categories.dynastyHoldings }
 
                 Card.ProvinceType (Card.Province props) ->
-                    { categories | provinces = ( props, n ) :: categories.provinces }
+                    { categories | provinces = props :: categories.provinces }
+
+                _ ->
+                    categories
     in
-    List.foldl intoCategories { strongholds = [], roles = [], provinces = [], conflictAttachments = [], conflictEvents = [], conflictCharacters = [], dynastyCharacters = [], dynastyEvents = [], dynastyHoldings = [] }
+    List.foldl intoCategories { role = Nothing, provinces = [], conflictAttachments = [], conflictEvents = [], conflictCharacters = [], dynastyCharacters = [], dynastyEvents = [], dynastyHoldings = [] }

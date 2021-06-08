@@ -1,5 +1,6 @@
-module UI.Icon exposing (Icon(..), clan, medium, small)
+module UI.Icon exposing (Icon(..), clan, element, medium, small)
 
+import Card
 import Clan
 import Html exposing (Attribute, Html, i, text)
 import Html.Attributes exposing (class)
@@ -72,6 +73,25 @@ clan c =
 
         Clan.Shadowlands ->
             Shadowlands
+
+
+element : Card.Element -> Icon
+element el =
+    case el of
+        Card.Air ->
+            Air
+
+        Card.Earth ->
+            Earth
+
+        Card.Fire ->
+            Fire
+
+        Card.Void ->
+            Void
+
+        Card.Water ->
+            Water
 
 
 small : Icon -> Html msg

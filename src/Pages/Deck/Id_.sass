@@ -1,2 +1,12 @@
-.main-column--1_of_2
-  flex: 1 0 50%
+// ------------
+// STRUCTURE
+// ------------
+.deckview-decklist
+  grid-column: 1/13
+  @media screen and ( min-width: 1024px)
+    grid-column: 1/7
+
+.deckview-side
+  grid-column: 1/13
+  @media screen and ( min-width: 1024px)
+    grid-column: 7/13

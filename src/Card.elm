@@ -40,23 +40,10 @@ type Element
     | Water
 
 
-elementName : Element -> String
-elementName element =
-    case element of
-        Air ->
-            "Air"
-
-        Earth ->
-            "Earth"
-
-        Fire ->
-            "Fire"
-
-        Void ->
-            "Void"
-
-        Water ->
-            "Water"
+type ProvinceElement
+    = Single Element
+    | Double Element Element
+    | Tomoe
 
 
 
@@ -75,6 +62,26 @@ type Card
 
 type Stronghold
     = Stronghold StrongholdProps
+
+
+shiroNishiyama : Stronghold
+shiroNishiyama =
+    Stronghold
+        { id = "shiro-nishiyama"
+        , title = "Shiro Nishiyama"
+        , clan = Clan.Crab
+        , traits = [ "castle" ]
+        , bonusStrength = Numerical.FixedModifier 3
+        , startingHonor = 10
+        , fateValue = 7
+        , influenceValue = 10
+        , abilities = [ "action: during a conflict, bow this stronghold - each defending character you control gets +1[conflict-military] and +1[conflict-political] until the end of the conflict." ]
+        , formatRequirement = Nothing
+        , image = "http://lcg-cdn.fantasyflightgames.com/l5r/L5C01_1.jpg"
+        , cycle = "core"
+        , cardNumber = "1"
+        , artist = "Alayna Lemmer"
+        }
 
 
 type Role
@@ -141,7 +148,7 @@ type alias ProvinceProps =
     , clan : Clan
     , traits : List String
     , strength : Numerical
-    , elements : List Element
+    , element : ProvinceElement
     , abilities : List String
     , roleRequirement : Maybe RoleTypes
     , formatRequirement : Maybe Format

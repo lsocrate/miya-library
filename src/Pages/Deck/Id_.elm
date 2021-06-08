@@ -83,20 +83,22 @@ view shared route model =
         content =
             case ( shared, model ) of
                 ( _, Loading ) ->
-                    List.singleton viewLoading
+                    [ viewLoading ]
 
                 ( Shared.Loading, _ ) ->
-                    List.singleton viewLoading
+                    [ viewLoading ]
 
                 ( _, Error ) ->
-                    List.singleton viewError
+                    [ viewError ]
 
                 ( Shared.Error, _ ) ->
-                    List.singleton viewError
+                    [ viewError ]
 
                 ( Shared.Loaded { cards }, Decklist decklist ) ->
-                    [ div [ class "main-column--1_of_2" ] [ UI.Decklist.view <| decklistToDeck cards decklist ]
-                    , div [ class "main-column--1_of_2" ] []
+                    [ main_ [ class "deckview-decklist" ]
+                        [ decklistToDeck cards decklist |> Maybe.map UI.Decklist.view |> Maybe.withDefault (div [] []) ]
+                    , aside [ class "deckview-side" ]
+                        []
                     ]
     in
     UI.Page.view route content
@@ -112,13 +114,30 @@ viewLoading =
     div [] [ text "Loading" ]
 
 
-decklistToDeck : Dict.Dict String Card.Card -> List ( String, Int ) -> UI.Decklist.Model
+decklistToDeck : Dict.Dict String Card.Card -> List ( String, Int ) -> Maybe UI.Decklist.Model
 decklistToDeck cardCollection decklist =
     let
         realCards =
             List.filterMap (toCardTuple cardCollection) decklist
+
+        sh =
+            List.head <|
+                List.filterMap
+                    (\( c, _ ) ->
+                        case c of
+                            Card.StrongholdType s ->
+                                Just s
+
+                            _ ->
+                                Nothing
+                    )
+                    realCards
     in
-    { cards = realCards, name = Just "Kisada's last Stand", author = "HidaAmoro" }
+    Maybe.map
+        (\stronghold ->
+            { cards = realCards, name = Just "Kisada's last Stand", author = "HidaAmoro", stronghold = stronghold }
+        )
+        sh
 
 
 toCardTuple : Dict.Dict String Card.Card -> ( String, Int ) -> Maybe ( Card.Card, Int )

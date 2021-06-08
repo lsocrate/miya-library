@@ -5,7 +5,7 @@ import Clan
 import Dict
 import Format
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, int, list, map, maybe, string)
+import Json.Decode as Decode exposing (Decoder, bool, int, list, map, map2, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import List
 import Numerical
@@ -380,9 +380,23 @@ roleRequirement =
     optional "role_restriction" toRoleRequirement Nothing
 
 
-elements : Decoder (List Card.Element -> b) -> Decoder b
+elements : Decoder (Card.ProvinceElement -> b) -> Decoder b
 elements =
     let
+        toElementTuple elList =
+            case elList of
+                [ elA ] ->
+                    Decode.succeed (Card.Single elA)
+
+                [ elA, elB ] ->
+                    Decode.succeed (Card.Double elA elB)
+
+                [ _, _, _, _, _ ] ->
+                    Decode.succeed Card.Tomoe
+
+                _ ->
+                    Decode.fail "Invalid province element combination"
+
         element =
             string
                 |> Decode.andThen
@@ -407,7 +421,7 @@ elements =
                                 Decode.fail "Invalid element"
                     )
     in
-    required "element" <| list element
+    required "element" <| Decode.andThen toElementTuple <| list element
 
 
 influenceValue : Decoder (Int -> b) -> Decoder b

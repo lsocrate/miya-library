@@ -37,7 +37,7 @@ subscriptions _ =
 
 
 type alias Deck =
-    { stronghold : String
+    { stronghold : Card.Stronghold
     , name : Maybe String
     , role : Maybe String
     , otherCards : Dict.Dict String Int
@@ -53,7 +53,7 @@ init : ( Model, Cmd Msg )
 init =
     -- ( ChoosingStronghold Nothing, Cmd.none )
     ( Deckbuilding
-        { stronghold = "shiro-nishiyama"
+        { stronghold = Card.shiroNishiyama
         , name = Nothing
         , role = Nothing
         , otherCards = Dict.empty
@@ -64,7 +64,7 @@ init =
 
 
 type Msg
-    = StrongholdSelected String
+    = StrongholdSelected Card.Stronghold
     | Changed UI.Filters.Model
     | DeckChanged Card.Card Int
 
@@ -104,8 +104,8 @@ view shared route model =
     let
         isStronghold card =
             case card of
-                Card.StrongholdType (Card.Stronghold props) ->
-                    Just props
+                Card.StrongholdType sh ->
+                    Just sh
 
                 _ ->
                     Nothing
@@ -137,16 +137,28 @@ viewLoading =
     div [] [ text "Loading" ]
 
 
-viewStrongholdSelector : List Card.StrongholdProps -> Html Msg
+viewStrongholdSelector : List Card.Stronghold -> Html Msg
 viewStrongholdSelector strongholds =
     let
         sortedStrongholds =
-            List.sortBy (.clan >> Clan.comparable) strongholds
+            List.sortBy
+                (\s ->
+                    case s of
+                        Card.Stronghold { clan } ->
+                            Clan.comparable clan
+                )
+                strongholds
 
-        strongholdOption strongholdProps =
-            li [ class "strongholdpicker-item", onClick (StrongholdSelected strongholdProps.id) ]
+        strongholdOption sh =
+            li
+                [ class "strongholdpicker-item"
+                , onClick <| StrongholdSelected sh
+                ]
                 [ img
-                    [ src strongholdProps.image
+                    [ src <|
+                        case sh of
+                            Card.Stronghold { image } ->
+                                image
                     , attribute "loading" "lazy"
                     ]
                     []
@@ -171,12 +183,11 @@ viewDeckbuilder cards deck filters =
 
         decklist =
             List.filterMap cardIdEntryToCardEntry <|
-                ( deck.stronghold, 1 )
-                    :: roleList
+                roleList
                     ++ Dict.toList deck.otherCards
     in
     [ main_ [ class "deckbuilder-decklist" ]
-        [ UI.Decklist.view <| { name = Nothing, author = "dude", cards = decklist }
+        [ UI.Decklist.view <| { name = Nothing, author = "dude", cards = decklist, stronghold = deck.stronghold }
         ]
     , aside [ class "deckbuilder-builder" ]
         [ viewFilters filters
