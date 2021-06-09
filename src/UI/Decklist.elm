@@ -1,6 +1,8 @@
 module UI.Decklist exposing (Model, view)
 
 import Card
+import Clan exposing (Clan(..))
+import Deck exposing (Deck)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import UI.Icon
@@ -13,58 +15,72 @@ type alias DecklistEntry c =
 type alias Model =
     { name : Maybe String
     , author : String
-    , cards : List (DecklistEntry Card.Card)
-    , stronghold : Card.Stronghold
+    , deck : Deck
     }
 
 
 view : Model -> Html msg
-view deck =
+view model =
     let
-        { provinces, conflictAttachments, conflictCharacters, role, conflictEvents, dynastyCharacters, dynastyEvents, dynastyHoldings } =
-            partition deck.cards
+        { name, author, deck } =
+            model
 
-        stronghold =
-            case deck.stronghold of
-                Card.Stronghold sh ->
-                    sh
+        { attachments, stronghold, role, conflictCharacters, conflictEvents, dynastyCharacters, dynastyEvents, provinces, holdings } =
+            deck
     in
-    div [ class "decklist" ]
+    div
+        [ class "decklist" ]
         [ div [ class "decklist-stronghold" ]
             [ img
-                [ src stronghold.image
+                [ src <| "/assets/card-" ++ stronghold.id ++ ".webp"
                 , attribute "loading" "lazy"
                 ]
                 []
             ]
         , div [ class "decklist-header" ]
-            [ h1 [ class "decklist-title" ] [ text <| Maybe.withDefault "Unnamed" deck.name ]
-            , p [ class "decklist-byline" ] [ text <| "By " ++ deck.author ]
+            [ h1 [ class "decklist-title" ] [ text <| Maybe.withDefault "Unnamed" name ]
+            , p [ class "decklist-byline" ] [ text <| "By " ++ author ]
             , h2 [ class "decklist-synth" ]
                 [ strong [] [ text <| stronghold.title ]
                 , text " - "
                 , text <| Maybe.withDefault "" <| Maybe.map .title role
                 ]
-            , p [] [ text "Influence" ]
+            , p []
+                [ strong [] [ text "Influence:" ]
+                , text <| String.fromInt <| sumInfluence stronghold.clan attachments + sumInfluence stronghold.clan conflictCharacters + sumInfluence stronghold.clan conflictEvents
+                , text " of "
+                , text <|
+                    String.fromInt <|
+                        case role of
+                            Just { traits } ->
+                                if List.member Card.KeeperRole traits then
+                                    stronghold.influenceValue + 3
+
+                                else
+                                    stronghold.influenceValue
+
+                            _ ->
+                                stronghold.influenceValue
+                ]
             , ul [ class "decklist-provincelist" ] <| provinceEntry provinces
             ]
         , div [ class "decklist-dynasty_deck" ]
             (div []
                 [ text "Dynasty Deck ("
-                , text <| String.fromInt (sumCards dynastyCharacters + sumCards dynastyHoldings + sumCards dynastyEvents)
+                , text <| String.fromInt <| sumCards dynastyCharacters + sumCards holdings + sumCards dynastyEvents
                 , text ")"
                 ]
                 :: cardBlock "Characters" dynastyCharacters
                 ++ cardBlock "Events" dynastyEvents
-                ++ cardBlock "Holdings" dynastyHoldings
+                ++ cardBlock "Holdings" holdings
             )
         , div [ class "decklist-conflict_deck" ]
             (div []
                 [ text "Conflict Deck ("
-                , text <| String.fromInt (sumCards conflictAttachments + sumCards conflictCharacters + sumCards conflictEvents)
+                , text <| String.fromInt <| sumCards attachments + sumCards conflictCharacters + sumCards conflictEvents
                 , text ")"
                 ]
-                :: cardBlock "Attachments" conflictAttachments
+                :: cardBlock "Attachments" attachments
                 ++ cardBlock "Characters" conflictCharacters
                 ++ cardBlock "Events" conflictEvents
             )
@@ -113,6 +129,19 @@ cardBlock title cards =
 sumCards : List (DecklistEntry a) -> Int
 sumCards =
     List.sum << List.map Tuple.second
+
+
+sumInfluence : Clan -> List (DecklistEntry { t | clan : Clan, influenceCost : Maybe Int }) -> Int
+sumInfluence deckClan =
+    let
+        totalInfluence ( card, n ) =
+            if card.clan == deckClan then
+                0
+
+            else
+                Maybe.map ((*) n) card.influenceCost |> Maybe.withDefault 0
+    in
+    List.sum << List.map totalInfluence
 
 
 partition :

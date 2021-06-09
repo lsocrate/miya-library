@@ -1,5 +1,6 @@
 module Shared exposing
-    ( Flags
+    ( CardCollection
+    , Flags
     , Model(..)
     , Msg
     , init
@@ -19,9 +20,13 @@ type alias Flags =
     Json.Value
 
 
+type alias CardCollection =
+    Dict String Card.Card
+
+
 type Model
     = Loading
-    | Loaded { cards : Dict String Card.Card, user : Maybe String }
+    | Loaded { cards : CardCollection, user : Maybe String }
     | Error
 
 

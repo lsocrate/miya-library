@@ -1,8 +1,7 @@
 module Pages.Deck.Id_ exposing (Model, Msg, page)
 
 import API.Deck
-import Card
-import Dict
+import Deck
 import Gen.Params.Deck.Id_ exposing (Params)
 import Gen.Route exposing (Route)
 import Html exposing (..)
@@ -114,32 +113,13 @@ viewLoading =
     div [] [ text "Loading" ]
 
 
-decklistToDeck : Dict.Dict String Card.Card -> List ( String, Int ) -> Maybe UI.Decklist.Model
+decklistToDeck : Shared.CardCollection -> Deck.Decklist -> Maybe UI.Decklist.Model
 decklistToDeck cardCollection decklist =
-    let
-        realCards =
-            List.filterMap (toCardTuple cardCollection) decklist
-
-        sh =
-            List.head <|
-                List.filterMap
-                    (\( c, _ ) ->
-                        case c of
-                            Card.StrongholdType s ->
-                                Just s
-
-                            _ ->
-                                Nothing
-                    )
-                    realCards
-    in
-    Maybe.map
-        (\stronghold ->
-            { cards = realCards, name = Just "Kisada's last Stand", author = "HidaAmoro", stronghold = stronghold }
-        )
-        sh
-
-
-toCardTuple : Dict.Dict String Card.Card -> ( String, Int ) -> Maybe ( Card.Card, Int )
-toCardTuple cards ( cardId, n ) =
-    Dict.get cardId cards |> Maybe.map (\card -> ( card, n ))
+    Deck.fromDecklist cardCollection decklist
+        |> Maybe.map
+            (\deck ->
+                { name = Just "Kisada's last Stand"
+                , author = "HidaAmoro"
+                , deck = deck
+                }
+            )

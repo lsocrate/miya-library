@@ -2,6 +2,7 @@ module Pages.Deckbuilder exposing (Model, Msg, page)
 
 import Card
 import Clan exposing (Clan(..))
+import Deck
 import Dict
 import Gen.Params.Deckbuilder exposing (Params)
 import Gen.Route exposing (Route)
@@ -36,7 +37,7 @@ subscriptions _ =
     Sub.none
 
 
-type alias Deck =
+type alias DeckOptions =
     { stronghold : Card.Stronghold
     , name : Maybe String
     , role : Maybe String
@@ -45,8 +46,8 @@ type alias Deck =
 
 
 type Model
-    = ChoosingStronghold (Maybe Deck)
-    | Deckbuilding Deck UI.Filters.Model
+    = ChoosingStronghold (Maybe DeckOptions)
+    | Deckbuilding DeckOptions UI.Filters.Model
 
 
 init : ( Model, Cmd Msg )
@@ -171,7 +172,7 @@ viewStrongholdSelector strongholds =
         ]
 
 
-viewDeckbuilder : Dict.Dict String Card.Card -> Deck -> UI.Filters.Model -> List (Html Msg)
+viewDeckbuilder : Dict.Dict String Card.Card -> DeckOptions -> UI.Filters.Model -> List (Html Msg)
 viewDeckbuilder cards deck filters =
     let
         roleList =
@@ -187,7 +188,10 @@ viewDeckbuilder cards deck filters =
                     ++ Dict.toList deck.otherCards
     in
     [ main_ [ class "deckbuilder-decklist" ]
-        [ UI.Decklist.view <| { name = Nothing, author = "dude", cards = decklist, stronghold = deck.stronghold }
+        [ List.map (\( c, n ) -> ( Card.id c, n )) decklist
+            |> Deck.fromDecklist cards
+            |> Maybe.map (\d -> UI.Decklist.view { name = Nothing, author = "dude", deck = d })
+            |> Maybe.withDefault (text "oops")
         ]
     , aside [ class "deckbuilder-builder" ]
         [ viewFilters filters
@@ -204,7 +208,7 @@ viewFilters filters =
         ]
 
 
-viewCardsOptions : Dict.Dict String Card.Card -> Deck -> UI.Filters.Model -> Html Msg
+viewCardsOptions : Dict.Dict String Card.Card -> DeckOptions -> UI.Filters.Model -> Html Msg
 viewCardsOptions cards deck filters =
     let
         cardRow card =
@@ -341,7 +345,7 @@ viewCardsOptions cards deck filters =
         ]
 
 
-compositeSort : Deck -> Card.Card -> Card.Card -> Order
+compositeSort : DeckOptions -> Card.Card -> Card.Card -> Order
 compositeSort deck a b =
     let
         selected card =

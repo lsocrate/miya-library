@@ -5,7 +5,7 @@ import Clan
 import Dict
 import Format
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, int, list, map, map2, maybe, string)
+import Json.Decode as Decode exposing (Decoder, bool, int, list, map, maybe, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import List
 import Numerical
