@@ -21,16 +21,36 @@ type alias Model =
 
 
 view : Model -> Html msg
-view model =
+view { name, author, deck } =
     let
-        { name, author, deck } =
-            model
-
         { attachments, stronghold, role, conflictCharacters, conflictEvents, dynastyCharacters, dynastyEvents, provinces, holdings } =
             deck
 
         influence =
             influenceData stronghold.clan attachments conflictCharacters conflictEvents
+
+        cardBlockDynasty =
+            cardBlock .title (always [])
+
+        cardBlockConflict =
+            cardBlock .title
+                (\{ influenceCost } ->
+                    case influenceCost of
+                        Just 1 ->
+                            [ text " ", UI.Icon.small UI.Icon.Influence1 ]
+
+                        Just 2 ->
+                            [ text " ", UI.Icon.small UI.Icon.Influence2 ]
+
+                        Just 3 ->
+                            [ text " ", UI.Icon.small UI.Icon.Influence3 ]
+
+                        Just 4 ->
+                            [ text " ", UI.Icon.small UI.Icon.Influence4 ]
+
+                        _ ->
+                            []
+                )
     in
     div [ class "decklist" ]
         [ div [ class "decklist-stronghold" ]
@@ -48,26 +68,7 @@ view model =
                 , text " - "
                 , text <| Maybe.withDefault "" <| Maybe.map .title role
                 ]
-            , p []
-                ([ strong [] [ text "Influence:" ]
-                 , text <| String.fromInt <| List.foldl (\( _, ( _, clanTotal ) ) total -> total + clanTotal) 0 influence
-                 , text " of "
-                 , text <|
-                    String.fromInt <|
-                        case role of
-                            Just { traits } ->
-                                if List.member Card.KeeperRole traits then
-                                    stronghold.influenceValue + 3
-
-                                else
-                                    stronghold.influenceValue
-
-                            _ ->
-                                stronghold.influenceValue
-                 , text " - "
-                 ]
-                    ++ List.map (\( clan, ( cardCount, _ ) ) -> span [] [ text <| String.fromInt cardCount, text " ", UI.Icon.small <| UI.Icon.clan clan ]) influence
-                )
+            , influenceDescription (Deck.maxInfluence deck) influence
             , ul [ class "decklist-provincelist" ] <| List.map provinceEntries provinces
             ]
         , section [ class "decklist-dynasty_deck" ]
@@ -76,9 +77,9 @@ view model =
                 , text <| String.fromInt <| sumCards dynastyCharacters + sumCards holdings + sumCards dynastyEvents
                 , text ")"
                 ]
-                :: cardBlock "Characters" dynastyCharacters
-                ++ cardBlock "Events" dynastyEvents
-                ++ cardBlock "Holdings" holdings
+                :: cardBlockDynasty "Characters" dynastyCharacters
+                ++ cardBlockDynasty "Events" dynastyEvents
+                ++ cardBlockDynasty "Holdings" holdings
             )
         , section [ class "decklist-conflict_deck" ]
             (h3 []
@@ -86,11 +87,40 @@ view model =
                 , text <| String.fromInt <| sumCards attachments + sumCards conflictCharacters + sumCards conflictEvents
                 , text ")"
                 ]
-                :: cardBlock "Attachments" attachments
-                ++ cardBlock "Characters" conflictCharacters
-                ++ cardBlock "Events" conflictEvents
+                :: cardBlockConflict "Attachments" attachments
+                ++ cardBlockConflict "Characters" conflictCharacters
+                ++ cardBlockConflict "Events" conflictEvents
             )
         ]
+
+
+influenceDescription : Int -> List ( Clan, ( Int, Int ) ) -> Html msg
+influenceDescription maxInfluence influence =
+    let
+        spentInfluence =
+            List.foldl (\( _, ( _, clanTotal ) ) total -> total + clanTotal) 0 influence
+
+        influenceIcons =
+            List.map
+                (\( clan, ( cardCount, _ ) ) ->
+                    span []
+                        [ text <| String.fromInt cardCount
+                        , text " "
+                        , UI.Icon.small <| UI.Icon.clan clan
+                        ]
+                )
+                influence
+    in
+    p [ classList [ ( "decklist-influence--ilegal", spentInfluence > maxInfluence ) ] ]
+        ([ strong [] [ text "Influence:" ]
+         , span []
+            [ text <| String.fromInt spentInfluence ]
+         , text " of "
+         , text <| String.fromInt maxInfluence
+         , text " - "
+         ]
+            ++ influenceIcons
+        )
 
 
 provinceEntries : Card.ProvinceProps -> Html msg
@@ -110,19 +140,26 @@ provinceEntries province =
         )
 
 
-cardBlock : String -> List (DecklistEntry { t | title : String }) -> List (Html msg)
-cardBlock title cards =
+cardBlock : (card -> String) -> (card -> List (Html msg)) -> String -> List (DecklistEntry card) -> List (Html msg)
+cardBlock cardTitle cardInfluenceInfo sectionTitle sectionCards =
     let
         cardRow ( card, n ) =
             if n < 1 then
                 Nothing
 
             else
-                Just (li [ class "decklist-cardrow" ] [ text (String.fromInt n ++ "x " ++ card.title) ])
+                Just <|
+                    li [ class "decklist-cardrow" ]
+                        ([ text <| String.fromInt n
+                         , text "x "
+                         , text <| cardTitle card
+                         ]
+                            ++ cardInfluenceInfo card
+                        )
     in
-    if sumCards cards > 0 then
-        [ h4 [] [ text <| title ++ " (" ++ String.fromInt (sumCards cards) ++ ")" ]
-        , ul [ class "decklist-cardlist" ] <| List.filterMap cardRow cards
+    if sumCards sectionCards > 0 then
+        [ h4 [] [ text <| sectionTitle ++ " (" ++ String.fromInt (sumCards sectionCards) ++ ")" ]
+        , ul [ class "decklist-cardlist" ] <| List.filterMap cardRow sectionCards
         ]
 
     else

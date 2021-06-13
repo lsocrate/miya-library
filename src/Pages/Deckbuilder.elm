@@ -175,6 +175,13 @@ viewStrongholdSelector strongholds =
 viewDeckbuilder : Dict.Dict String Card.Card -> DeckOptions -> UI.Filters.Model -> List (Html Msg)
 viewDeckbuilder cards deck filters =
     let
+        strongholdDecklistEntry =
+            ( case deck.stronghold of
+                Card.Stronghold { id } ->
+                    id
+            , 1
+            )
+
         roleList =
             Maybe.withDefault [] <|
                 Maybe.map (\roleId -> [ ( roleId, 1 ) ]) deck.role
@@ -184,7 +191,8 @@ viewDeckbuilder cards deck filters =
 
         decklist =
             List.filterMap cardIdEntryToCardEntry <|
-                roleList
+                strongholdDecklistEntry
+                    :: roleList
                     ++ Dict.toList deck.otherCards
     in
     [ main_ [ class "deckbuilder-decklist" ]

@@ -1,4 +1,4 @@
-module Deck exposing (Deck, Decklist, fromDecklist)
+module Deck exposing (Deck, Decklist, fromDecklist, maxInfluence)
 
 import Card
 import Dict
@@ -143,3 +143,23 @@ intoCategories ( card, n ) cats =
 
         Card.ProvinceType (Card.Province props) ->
             { cats | provinces = ( props, n ) :: cats.provinces }
+
+
+
+--------------
+-- HELPERS
+--------------
+
+
+maxInfluence : Deck -> Int
+maxInfluence { role, stronghold } =
+    case role of
+        Just { traits } ->
+            if List.member Card.KeeperRole traits then
+                stronghold.influenceValue + 3
+
+            else
+                stronghold.influenceValue
+
+        _ ->
+            stronghold.influenceValue
