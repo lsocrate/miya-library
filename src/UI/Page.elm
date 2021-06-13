@@ -26,7 +26,10 @@ view currentRoute mainViews =
     , body =
         [ header [ class "page-header" ]
             [ div [ class "header-logo" ]
-                [ text "Miya Library" ]
+                [ a [ href <| Route.toHref Route.Home_ ]
+                    [ text "Miya Library"
+                    ]
+                ]
             , nav [ class "nav" ]
                 [ ul [ class "nav-list" ] <| List.map navItem items ]
             ]

@@ -52,16 +52,7 @@ type Model
 
 init : ( Model, Cmd Msg )
 init =
-    -- ( ChoosingStronghold Nothing, Cmd.none )
-    ( Deckbuilding
-        { stronghold = Card.shiroNishiyama
-        , name = Nothing
-        , role = Nothing
-        , otherCards = Dict.empty
-        }
-        UI.Filters.init
-    , Cmd.none
-    )
+    ( ChoosingStronghold Nothing, Cmd.none )
 
 
 type Msg
@@ -157,9 +148,11 @@ viewStrongholdSelector strongholds =
                 ]
                 [ img
                     [ src <|
-                        case sh of
-                            Card.Stronghold { image } ->
-                                image
+                        Card.image
+                            (case sh of
+                                Card.Stronghold { id } ->
+                                    id
+                            )
                     , attribute "loading" "lazy"
                     ]
                     []

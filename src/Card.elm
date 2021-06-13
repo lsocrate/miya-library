@@ -592,3 +592,8 @@ isHolding card =
 
         _ ->
             False
+
+
+image : String -> String
+image cardId =
+    "/assets/card-" ++ cardId ++ ".webp"
