@@ -12,8 +12,10 @@ import Html.Events exposing (onClick)
 import Html.Keyed
 import Numerical
 import Page
+import Platform exposing (Task)
 import Request
 import Shared
+import Task
 import UI.Decklist
 import UI.Filters
 import UI.Icon
@@ -37,17 +39,23 @@ subscriptions _ =
     Sub.none
 
 
-type alias DeckOptions =
+type DeckName
+    = Unnamed
+    | Named String
+    | EditingName String (Maybe String)
+
+
+type alias DeckCards =
     { stronghold : Card.Stronghold
-    , name : Maybe String
+    , name : DeckName
     , role : Maybe String
     , otherCards : Dict.Dict String Int
     }
 
 
 type Model
-    = ChoosingStronghold (Maybe DeckOptions)
-    | Deckbuilding DeckOptions UI.Filters.Model
+    = ChoosingStronghold (Maybe DeckCards)
+    | Deckbuilding DeckCards UI.Filters.Model
 
 
 init : ( Model, Cmd Msg )
@@ -55,32 +63,66 @@ init =
     ( ChoosingStronghold Nothing, Cmd.none )
 
 
+
+-- ( ChoosingStronghold Nothing, Task.perform (always <| StrongholdSelected Card.shiroNishiyama) (Task.succeed ()) )
+
+
 type Msg
     = StrongholdSelected Card.Stronghold
     | Changed UI.Filters.Model
     | DeckChanged Card.Card Int
+    | StartUpdateName
+    | UpdateName String
+    | DoneUpdateName String
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
-    case ( msg, model ) of
-        ( StrongholdSelected stronghold, ChoosingStronghold oldDeck ) ->
+    case ( model, msg ) of
+        ( ChoosingStronghold oldDeck, StrongholdSelected stronghold ) ->
             let
                 newDeck =
                     Maybe.map (\deck -> { deck | stronghold = stronghold }) oldDeck
                         |> Maybe.withDefault
                             { stronghold = stronghold
-                            , name = Nothing
+                            , name = Unnamed
                             , role = Nothing
                             , otherCards = Dict.empty
                             }
             in
             ( Deckbuilding newDeck UI.Filters.init, Cmd.none )
 
-        ( Changed newFilters, Deckbuilding deck _ ) ->
+        ( Deckbuilding deck filters, StartUpdateName ) ->
+            let
+                oldName =
+                    case deck.name of
+                        Named name ->
+                            Just name
+
+                        _ ->
+                            Nothing
+            in
+            ( Deckbuilding { deck | name = EditingName "" oldName } filters, Cmd.none )
+
+        ( Deckbuilding deck filters, UpdateName newName ) ->
+            let
+                oldName =
+                    case deck.name of
+                        Named name ->
+                            Just name
+
+                        _ ->
+                            Nothing
+            in
+            ( Deckbuilding { deck | name = EditingName newName oldName } filters, Cmd.none )
+
+        ( Deckbuilding deck filters, DoneUpdateName newName ) ->
+            ( Deckbuilding { deck | name = Named newName } filters, Cmd.none )
+
+        ( Deckbuilding deck _, Changed newFilters ) ->
             ( Deckbuilding deck newFilters, Cmd.none )
 
-        ( DeckChanged card n, Deckbuilding deck filters ) ->
+        ( Deckbuilding deck filters, DeckChanged card n ) ->
             let
                 newDeck =
                     { deck | otherCards = Dict.insert (Card.id card) n deck.otherCards }
@@ -165,7 +207,7 @@ viewStrongholdSelector strongholds =
         ]
 
 
-viewDeckbuilder : Dict.Dict String Card.Card -> DeckOptions -> UI.Filters.Model -> List (Html Msg)
+viewDeckbuilder : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> List (Html Msg)
 viewDeckbuilder cards deck filters =
     let
         strongholdDecklistEntry =
@@ -191,7 +233,36 @@ viewDeckbuilder cards deck filters =
     [ main_ [ class "deckbuilder-decklist" ]
         [ List.map (\( c, n ) -> ( Card.id c, n )) decklist
             |> Deck.fromDecklist cards
-            |> Maybe.map (\d -> UI.Decklist.view { name = Nothing, author = "dude", deck = d })
+            |> Maybe.map
+                (\d ->
+                    UI.Decklist.view
+                        (Just
+                            { startUpdateName = StartUpdateName
+                            , updateName = UpdateName
+                            , doneUpdateName = DoneUpdateName
+                            }
+                        )
+                        { name =
+                            case deck.name of
+                                Named name ->
+                                    Just name
+
+                                EditingName name _ ->
+                                    Just name
+
+                                _ ->
+                                    Nothing
+                        , author = "dude"
+                        , deck = d
+                        , editingName =
+                            case deck.name of
+                                EditingName _ _ ->
+                                    True
+
+                                _ ->
+                                    False
+                        }
+                )
             |> Maybe.withDefault (text "oops")
         ]
     , aside [ class "deckbuilder-builder" ]
@@ -209,7 +280,7 @@ viewFilters filters =
         ]
 
 
-viewCardsOptions : Dict.Dict String Card.Card -> DeckOptions -> UI.Filters.Model -> Html Msg
+viewCardsOptions : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> Html Msg
 viewCardsOptions cards deck filters =
     let
         cardRow card =
@@ -346,7 +417,7 @@ viewCardsOptions cards deck filters =
         ]
 
 
-compositeSort : DeckOptions -> Card.Card -> Card.Card -> Order
+compositeSort : DeckCards -> Card.Card -> Card.Card -> Order
 compositeSort deck a b =
     let
         selected card =

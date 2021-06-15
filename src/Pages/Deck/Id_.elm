@@ -95,7 +95,7 @@ view shared route model =
 
                 ( Shared.Loaded { cards }, Decklist decklist ) ->
                     [ main_ [ class "deckview-decklist" ]
-                        [ decklistToDeck cards decklist |> Maybe.map UI.Decklist.view |> Maybe.withDefault (div [] []) ]
+                        [ decklistToDeck cards decklist |> Maybe.map (UI.Decklist.view Nothing) |> Maybe.withDefault (div [] []) ]
                     , aside [ class "deckview-side" ]
                         []
                     ]
@@ -121,5 +121,6 @@ decklistToDeck cardCollection decklist =
                 { name = Just "Kisada's last Stand"
                 , author = "HidaAmoro"
                 , deck = deck
+                , editingName = False
                 }
             )

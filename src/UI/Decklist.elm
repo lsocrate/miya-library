@@ -5,6 +5,7 @@ import Clan exposing (Clan(..))
 import Deck exposing (Deck)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Tuple
 import UI.Icon
 
@@ -17,11 +18,19 @@ type alias Model =
     { name : Maybe String
     , author : String
     , deck : Deck
+    , editingName : Bool
     }
 
 
-view : Model -> Html msg
-view { name, author, deck } =
+type alias Actions msg =
+    { startUpdateName : msg
+    , updateName : String -> msg
+    , doneUpdateName : String -> msg
+    }
+
+
+view : Maybe (Actions msg) -> Model -> Html msg
+view actions { name, author, deck, editingName } =
     let
         { attachments, stronghold, role, conflictCharacters, conflictEvents, dynastyCharacters, dynastyEvents, provinces, holdings } =
             deck
@@ -61,7 +70,28 @@ view { name, author, deck } =
                 []
             ]
         , section [ class "decklist-header" ]
-            [ h1 [ class "decklist-title" ] [ text <| Maybe.withDefault "Unnamed" name ]
+            [ h1 [ class "decklist-title" ]
+                (case ( editingName, actions ) of
+                    ( False, Nothing ) ->
+                        [ text <| Maybe.withDefault "Unnamed" name ]
+
+                    ( False, Just { startUpdateName } ) ->
+                        [ text <| Maybe.withDefault "Unnamed" name
+                        , button [ onClick startUpdateName ] [ text "edit" ]
+                        ]
+
+                    ( True, Just { updateName, doneUpdateName } ) ->
+                        [ input
+                            [ onInput updateName
+                            , value <| Maybe.withDefault "" name
+                            ]
+                            []
+                        , button [ onClick <| doneUpdateName <| Maybe.withDefault "" name ] [ text "save" ]
+                        ]
+
+                    _ ->
+                        [ text "" ]
+                )
             , p [ class "decklist-byline" ] [ text <| "By " ++ author ]
             , h2 [ class "decklist-synth" ]
                 [ strong [] [ text <| stronghold.title ]
