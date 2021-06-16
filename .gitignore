@@ -6,4 +6,4 @@
 *.gz
 elm-stuff
 node_modules
-dist
+public/dist
