@@ -64,24 +64,23 @@ type Stronghold
     = Stronghold StrongholdProps
 
 
-shiroNishiyama : Stronghold
+shiroNishiyama : StrongholdProps
 shiroNishiyama =
-    Stronghold
-        { id = "shiro-nishiyama"
-        , title = "Shiro Nishiyama"
-        , clan = Clan.Crab
-        , traits = [ "castle" ]
-        , bonusStrength = Numerical.FixedModifier 3
-        , startingHonor = 10
-        , fateValue = 7
-        , influenceValue = 10
-        , abilities = [ "action: during a conflict, bow this stronghold - each defending character you control gets +1[conflict-military] and +1[conflict-political] until the end of the conflict." ]
-        , formatRequirement = Nothing
-        , image = "http://lcg-cdn.fantasyflightgames.com/l5r/L5C01_1.jpg"
-        , cycle = "core"
-        , cardNumber = "1"
-        , artist = "Alayna Lemmer"
-        }
+    { id = "shiro-nishiyama"
+    , title = "Shiro Nishiyama"
+    , clan = Clan.Crab
+    , traits = [ "castle" ]
+    , bonusStrength = Numerical.FixedModifier 3
+    , startingHonor = 10
+    , fateValue = 7
+    , influenceValue = 10
+    , abilities = [ "action: during a conflict, bow this stronghold - each defending character you control gets +1[conflict-military] and +1[conflict-political] until the end of the conflict." ]
+    , formatRequirement = Nothing
+    , image = "http://lcg-cdn.fantasyflightgames.com/l5r/L5C01_1.jpg"
+    , cycle = "core"
+    , cardNumber = "1"
+    , artist = "Alayna Lemmer"
+    }
 
 
 type Role

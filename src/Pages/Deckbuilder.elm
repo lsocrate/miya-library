@@ -17,8 +17,10 @@ import Request
 import Shared
 import Task
 import UI.Decklist
+import UI.Error
 import UI.Filters
 import UI.Icon
+import UI.Loading
 import UI.Page
 import Url exposing (Protocol(..))
 import View exposing (View)
@@ -30,27 +32,8 @@ page shared req =
         { init = init
         , update = update shared
         , view = view shared req.route
-        , subscriptions = subscriptions
+        , subscriptions = always Sub.none
         }
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
-
-
-type DeckName
-    = Unnamed
-    | Named String
-    | EditingName String (Maybe String)
-
-
-type alias DeckCards =
-    { stronghold : Card.Stronghold
-    , name : DeckName
-    , role : Maybe String
-    , otherCards : Dict.Dict String Int
-    }
 
 
 type Model
@@ -60,17 +43,28 @@ type Model
 
 init : ( Model, Cmd Msg )
 init =
-    ( ChoosingStronghold Nothing, Cmd.none )
+    -- ( ChoosingStronghold Nothing, Cmd.none )
+    ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
 
 
+type alias DeckCards =
+    { stronghold : Card.StrongholdProps
+    , name : DeckName
+    , role : Maybe String
+    , otherCards : Dict.Dict String Int
+    }
 
--- ( ChoosingStronghold Nothing, Task.perform (always <| StrongholdSelected Card.shiroNishiyama) (Task.succeed ()) )
+
+type DeckName
+    = Unnamed
+    | Named String
+    | EditingName String (Maybe String)
 
 
 type Msg
-    = StrongholdSelected Card.Stronghold
-    | Changed UI.Filters.Model
-    | DeckChanged Card.Card Int
+    = SelectedStronghold Card.StrongholdProps
+    | ChangedFilters UI.Filters.Model
+    | ChangedDecklist ( Card.Card, Int )
     | StartUpdateName
     | UpdateName String
     | DoneUpdateName String
@@ -79,12 +73,12 @@ type Msg
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
     case ( model, msg ) of
-        ( ChoosingStronghold oldDeck, StrongholdSelected stronghold ) ->
+        ( ChoosingStronghold oldDeck, SelectedStronghold newStronghold ) ->
             let
                 newDeck =
-                    Maybe.map (\deck -> { deck | stronghold = stronghold }) oldDeck
+                    Maybe.map (\deck -> { deck | stronghold = newStronghold }) oldDeck
                         |> Maybe.withDefault
-                            { stronghold = stronghold
+                            { stronghold = newStronghold
                             , name = Unnamed
                             , role = Nothing
                             , otherCards = Dict.empty
@@ -116,16 +110,31 @@ update _ msg model =
             in
             ( Deckbuilding { deck | name = EditingName newName oldName } filters, Cmd.none )
 
-        ( Deckbuilding deck filters, DoneUpdateName newName ) ->
-            ( Deckbuilding { deck | name = Named newName } filters, Cmd.none )
-
-        ( Deckbuilding deck _, Changed newFilters ) ->
-            ( Deckbuilding deck newFilters, Cmd.none )
-
-        ( Deckbuilding deck filters, DeckChanged card n ) ->
+        ( Deckbuilding oldDeck filters, DoneUpdateName newName ) ->
             let
                 newDeck =
-                    { deck | otherCards = Dict.insert (Card.id card) n deck.otherCards }
+                    { oldDeck
+                        | name =
+                            if String.isEmpty newName then
+                                Unnamed
+
+                            else
+                                Named newName
+                    }
+            in
+            ( Deckbuilding newDeck filters, Cmd.none )
+
+        ( Deckbuilding deck _, ChangedFilters newFilters ) ->
+            ( Deckbuilding deck newFilters, Cmd.none )
+
+        ( Deckbuilding oldDeck filters, ChangedDecklist ( card, qty ) ) ->
+            let
+                newDeck =
+                    if qty == 0 then
+                        { oldDeck | otherCards = Dict.remove (Card.id card) oldDeck.otherCards }
+
+                    else
+                        { oldDeck | otherCards = Dict.insert (Card.id card) qty oldDeck.otherCards }
             in
             ( Deckbuilding newDeck filters, Cmd.none )
 
@@ -138,7 +147,7 @@ view shared route model =
     let
         isStronghold card =
             case card of
-                Card.StrongholdType sh ->
+                Card.StrongholdType (Card.Stronghold sh) ->
                     Just sh
 
                 _ ->
@@ -147,10 +156,10 @@ view shared route model =
         viewsForStep =
             case ( shared, model ) of
                 ( Shared.Loading, _ ) ->
-                    [ viewLoading ]
+                    [ UI.Loading.view ]
 
                 ( Shared.Error, _ ) ->
-                    [ viewError ]
+                    [ UI.Error.view ]
 
                 ( Shared.Loaded { cards }, ChoosingStronghold _ ) ->
                     [ viewStrongholdSelector <| List.filterMap isStronghold <| Dict.values cards ]
@@ -161,78 +170,44 @@ view shared route model =
     UI.Page.view route viewsForStep
 
 
-viewError : Html Msg
-viewError =
-    div [] [ text "Error!" ]
-
-
-viewLoading : Html Msg
-viewLoading =
-    div [] [ text "Loading" ]
-
-
-viewStrongholdSelector : List Card.Stronghold -> Html Msg
+viewStrongholdSelector : List Card.StrongholdProps -> Html Msg
 viewStrongholdSelector strongholds =
-    let
-        sortedStrongholds =
-            List.sortBy
-                (\s ->
-                    case s of
-                        Card.Stronghold { clan } ->
-                            Clan.comparable clan
-                )
-                strongholds
-
-        strongholdOption sh =
-            li
-                [ class "strongholdpicker-item"
-                , onClick <| StrongholdSelected sh
-                ]
-                [ img
-                    [ src <|
-                        Card.image
-                            (case sh of
-                                Card.Stronghold { id } ->
-                                    id
-                            )
-                    , attribute "loading" "lazy"
-                    ]
-                    []
-                ]
-    in
     div [ class "strongholdpicker" ]
         [ h2 [] [ text "Choose a stronghold" ]
         , ul [ class "strongholdpicker-options" ]
-            (List.map strongholdOption sortedStrongholds)
+            (List.sortBy (.clan >> Clan.comparable) strongholds
+                |> List.map
+                    (\sh ->
+                        li
+                            [ class "strongholdpicker-item"
+                            , onClick <| SelectedStronghold sh
+                            ]
+                            [ img
+                                [ src <| Card.image sh.id
+                                , attribute "loading" "lazy"
+                                ]
+                                []
+                            ]
+                    )
+            )
         ]
 
 
 viewDeckbuilder : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> List (Html Msg)
-viewDeckbuilder cards deck filters =
+viewDeckbuilder cards deckCards filters =
     let
-        strongholdDecklistEntry =
-            ( case deck.stronghold of
-                Card.Stronghold { id } ->
-                    id
-            , 1
-            )
-
-        roleList =
-            Maybe.withDefault [] <|
-                Maybe.map (\roleId -> [ ( roleId, 1 ) ]) deck.role
-
-        cardIdEntryToCardEntry ( cardId, n ) =
-            Dict.get cardId cards |> Maybe.map (\card -> ( card, n ))
-
-        decklist =
-            List.filterMap cardIdEntryToCardEntry <|
-                strongholdDecklistEntry
-                    :: roleList
-                    ++ Dict.toList deck.otherCards
+        deck =
+            [ Dict.toList deckCards.otherCards
+            , [ ( deckCards.stronghold.id, 1 ) ]
+            , Maybe.map (\roleId -> [ ( roleId, 1 ) ]) deckCards.role
+                |> Maybe.withDefault []
+            ]
+                |> List.concat
+                |> List.filter (\( cardId, _ ) -> Dict.member cardId cards)
+                |> Deck.fromDecklist cards
     in
     [ main_ [ class "deckbuilder-decklist" ]
-        [ List.map (\( c, n ) -> ( Card.id c, n )) decklist
-            |> Deck.fromDecklist cards
+        [ deck
             |> Maybe.map
                 (\d ->
                     UI.Decklist.view
@@ -243,7 +218,7 @@ viewDeckbuilder cards deck filters =
                             }
                         )
                         { name =
-                            case deck.name of
+                            case deckCards.name of
                                 Named name ->
                                     Just name
 
@@ -255,7 +230,7 @@ viewDeckbuilder cards deck filters =
                         , author = "dude"
                         , deck = d
                         , editingName =
-                            case deck.name of
+                            case deckCards.name of
                                 EditingName _ _ ->
                                     True
 
@@ -263,11 +238,11 @@ viewDeckbuilder cards deck filters =
                                     False
                         }
                 )
-            |> Maybe.withDefault (text "oops")
+            |> Maybe.withDefault UI.Error.view
         ]
     , aside [ class "deckbuilder-builder" ]
         [ viewFilters filters
-        , viewCardsOptions cards deck filters
+        , viewCardsOptions cards deckCards filters
         ]
     ]
 
@@ -276,7 +251,7 @@ viewFilters : UI.Filters.Model -> Html Msg
 viewFilters filters =
     div [ class "filters" ]
         [ p [] [ text "Filters" ]
-        , div [ class "filters-row" ] (UI.Filters.view filters Changed)
+        , div [ class "filters-row" ] (UI.Filters.view filters ChangedFilters)
         ]
 
 
@@ -303,7 +278,7 @@ viewCardsOptions cards deck filters =
                                         , input
                                             [ type_ "radio"
                                             , name <| Card.title card
-                                            , onClick <| DeckChanged card n
+                                            , onClick <| ChangedDecklist ( card, n )
                                             ]
                                             []
                                         ]
