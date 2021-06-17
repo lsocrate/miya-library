@@ -13,7 +13,7 @@ import Html.Keyed
 import Numerical
 import Page
 import Request
-import Shared
+import Shared exposing (CardCollection)
 import Task
 import UI.Decklist
 import UI.Error
@@ -144,7 +144,7 @@ update _ msg model =
 view : Shared.Model -> Route -> Model -> View Msg
 view shared route model =
     let
-        isStronghold card =
+        toStronghold card =
             case card of
                 Card.StrongholdType (Card.Stronghold sh) ->
                     Just sh
@@ -161,21 +161,44 @@ view shared route model =
                     [ UI.Error.view ]
 
                 ( Shared.Loaded { cards }, ChoosingStronghold _ ) ->
-                    [ List.filterMap isStronghold (Dict.values cards) |> viewStrongholdSelector ]
+                    [ List.filterMap toStronghold (Dict.values cards) |> viewStrongholdSelector ]
 
                 ( Shared.Loaded { cards }, Deckbuilding deckCards filters ) ->
-                    [ main_ [ class "deckbuilder-decklist" ]
-                        [ intoDeck cards deckCards
-                            |> Maybe.map (decklistModel deckCards >> UI.Decklist.view decklistActions)
-                            |> Maybe.withDefault UI.Error.view
-                        ]
-                    , aside [ class "deckbuilder-builder" ]
-                        [ viewFilters filters
-                        , viewCardsOptions cards deckCards filters
-                        ]
-                    ]
+                    case intoDeck cards deckCards of
+                        Nothing ->
+                            [ UI.Error.view ]
+
+                        Just deck ->
+                            [ main_ [ class "deckbuilder-decklist" ]
+                                [ decklistModel deckCards deck |> UI.Decklist.view decklistActions
+                                ]
+                            , aside [ class "deckbuilder-builder" ]
+                                [ div [ class "deckbuilder-provinces" ] <| viewProvinceSelector cards deck
+                                , viewFilters filters
+                                , viewCardsOptions cards deckCards filters
+                                ]
+                            ]
     in
     UI.Page.view route viewsForStep
+
+
+viewProvinceSelector : CardCollection -> Deck.Deck -> List (Html Msg)
+viewProvinceSelector cards deck =
+    List.filterMap (viewProvinceLine deck) (Dict.values cards)
+
+
+viewProvinceLine : Deck.Deck -> Card.Card -> Maybe (Html Msg)
+viewProvinceLine deck card =
+    case card of
+        Card.ProvinceType (Card.Province props) ->
+            if props.clan == deck.stronghold.clan || props.clan == Neutral then
+                Just (text props.title)
+
+            else
+                Nothing
+
+        _ ->
+            Nothing
 
 
 decklistActions : Maybe { startUpdateName : Msg, updateName : String -> Msg, doneUpdateName : String -> Msg }
@@ -234,7 +257,7 @@ viewStrongholdSelector strongholds =
         ]
 
 
-intoDeck : Dict.Dict String Card.Card -> DeckCards -> Maybe Deck.Deck
+intoDeck : CardCollection -> DeckCards -> Maybe Deck.Deck
 intoDeck cards deckCards =
     [ Dict.toList deckCards.otherCards
     , [ ( deckCards.stronghold.id, 1 ) ]
@@ -383,6 +406,21 @@ viewCardsOptions cards deck filters =
                     ]
                 ]
                 (Dict.values cards
+                    |> List.filter
+                        (\card ->
+                            case card of
+                                Card.StrongholdType _ ->
+                                    False
+
+                                Card.RoleType _ ->
+                                    False
+
+                                Card.ProvinceType _ ->
+                                    False
+
+                                _ ->
+                                    True
+                        )
                     |> List.sortWith (compositeSort deck)
                     |> List.map cardRow
                 )
