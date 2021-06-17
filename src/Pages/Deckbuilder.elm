@@ -12,7 +12,6 @@ import Html.Events exposing (onClick)
 import Html.Keyed
 import Numerical
 import Page
-import Platform exposing (Task)
 import Request
 import Shared
 import Task
@@ -162,12 +161,54 @@ view shared route model =
                     [ UI.Error.view ]
 
                 ( Shared.Loaded { cards }, ChoosingStronghold _ ) ->
-                    [ viewStrongholdSelector <| List.filterMap isStronghold <| Dict.values cards ]
+                    [ List.filterMap isStronghold (Dict.values cards) |> viewStrongholdSelector ]
 
-                ( Shared.Loaded { cards }, Deckbuilding deck filters ) ->
-                    viewDeckbuilder cards deck filters
+                ( Shared.Loaded { cards }, Deckbuilding deckCards filters ) ->
+                    [ main_ [ class "deckbuilder-decklist" ]
+                        [ intoDeck cards deckCards
+                            |> Maybe.map (decklistModel deckCards >> UI.Decklist.view decklistActions)
+                            |> Maybe.withDefault UI.Error.view
+                        ]
+                    , aside [ class "deckbuilder-builder" ]
+                        [ viewFilters filters
+                        , viewCardsOptions cards deckCards filters
+                        ]
+                    ]
     in
     UI.Page.view route viewsForStep
+
+
+decklistActions : Maybe { startUpdateName : Msg, updateName : String -> Msg, doneUpdateName : String -> Msg }
+decklistActions =
+    Just
+        { startUpdateName = StartUpdateName
+        , updateName = UpdateName
+        , doneUpdateName = DoneUpdateName
+        }
+
+
+decklistModel : DeckCards -> Deck.Deck -> UI.Decklist.Model
+decklistModel deckCards deck =
+    { name =
+        case deckCards.name of
+            Named name ->
+                Just name
+
+            EditingName name _ ->
+                Just name
+
+            _ ->
+                Nothing
+    , author = "dude"
+    , deck = deck
+    , editingName =
+        case deckCards.name of
+            EditingName _ _ ->
+                True
+
+            _ ->
+                False
+    }
 
 
 viewStrongholdSelector : List Card.StrongholdProps -> Html Msg
@@ -193,58 +234,16 @@ viewStrongholdSelector strongholds =
         ]
 
 
-viewDeckbuilder : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> List (Html Msg)
-viewDeckbuilder cards deckCards filters =
-    let
-        deck =
-            [ Dict.toList deckCards.otherCards
-            , [ ( deckCards.stronghold.id, 1 ) ]
-            , Maybe.map (\roleId -> [ ( roleId, 1 ) ]) deckCards.role
-                |> Maybe.withDefault []
-            ]
-                |> List.concat
-                |> List.filter (\( cardId, _ ) -> Dict.member cardId cards)
-                |> Deck.fromDecklist cards
-    in
-    [ main_ [ class "deckbuilder-decklist" ]
-        [ deck
-            |> Maybe.map
-                (\d ->
-                    UI.Decklist.view
-                        (Just
-                            { startUpdateName = StartUpdateName
-                            , updateName = UpdateName
-                            , doneUpdateName = DoneUpdateName
-                            }
-                        )
-                        { name =
-                            case deckCards.name of
-                                Named name ->
-                                    Just name
-
-                                EditingName name _ ->
-                                    Just name
-
-                                _ ->
-                                    Nothing
-                        , author = "dude"
-                        , deck = d
-                        , editingName =
-                            case deckCards.name of
-                                EditingName _ _ ->
-                                    True
-
-                                _ ->
-                                    False
-                        }
-                )
-            |> Maybe.withDefault UI.Error.view
-        ]
-    , aside [ class "deckbuilder-builder" ]
-        [ viewFilters filters
-        , viewCardsOptions cards deckCards filters
-        ]
+intoDeck : Dict.Dict String Card.Card -> DeckCards -> Maybe Deck.Deck
+intoDeck cards deckCards =
+    [ Dict.toList deckCards.otherCards
+    , [ ( deckCards.stronghold.id, 1 ) ]
+    , Maybe.map (\roleId -> [ ( roleId, 1 ) ]) deckCards.role
+        |> Maybe.withDefault []
     ]
+        |> List.concat
+        |> List.filter (\( cardId, _ ) -> Dict.member cardId cards)
+        |> Deck.fromDecklist cards
 
 
 viewFilters : UI.Filters.Model -> Html Msg
@@ -349,9 +348,8 @@ viewCardsOptions cards deck filters =
             )
     in
     div [ class "cards" ]
-        [ p [] [ text "Cards" ]
-        , table [ class "cardlist" ]
-            [ thead []
+        [ table [ class "cardlist" ]
+            [ thead [ class "cardlist-headers" ]
                 [ tr []
                     [ th [ class "cardlist-quantity" ] [ text "Quantity" ]
                     , th [ class "cardlist-clan" ] []

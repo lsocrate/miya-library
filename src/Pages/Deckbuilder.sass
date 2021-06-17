@@ -36,15 +36,21 @@
 // ------------
 // FILTERS
 // ------------
-.filters-row
-  display: flex
-  flex-wrap: wrap
+.filters
+  position: sticky
+  top: 0
+  &-row
+    display: flex
+    flex-wrap: wrap
 
 // ------------
 // CARD PICKER
 // ------------
 .cardlist
   width: 100%
+  &-headers
+    position: sticky
+    top: 80px
 
   &-option
     background: #fff
