@@ -7,6 +7,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Tuple
+import UI.Card
 import UI.Icon
 
 
@@ -62,13 +63,7 @@ view actions { name, author, deck, editingName } =
                 )
     in
     div [ class "decklist" ]
-        [ div [ class "decklist-stronghold" ]
-            [ img
-                [ src <| "/assets/card-" ++ stronghold.id ++ ".webp"
-                , attribute "loading" "lazy"
-                ]
-                []
-            ]
+        [ div [ class "decklist-stronghold" ] [ UI.Card.img stronghold ]
         , section [ class "decklist-header" ]
             [ h1 [ class "decklist-title" ]
                 (case ( editingName, actions ) of
