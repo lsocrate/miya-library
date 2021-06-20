@@ -16,6 +16,7 @@ import Page
 import Request
 import Shared exposing (CardCollection)
 import Task
+import UI.Card
 import UI.Decklist
 import UI.Error
 import UI.Filters
@@ -74,6 +75,7 @@ type Msg
     | UpdateName String
     | DoneUpdateName String
     | ChangeProvinceSelector Element.Element
+    | ToggleProvince Card.ProvinceProps
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
@@ -147,6 +149,21 @@ update _ msg model =
         ( Deckbuilding dc fs (ProvinceSelectorOpen _), ChangeProvinceSelector newElement ) ->
             ( Deckbuilding dc fs (ProvinceSelectorOpen newElement), Cmd.none )
 
+        ( Deckbuilding dc fs ps, ToggleProvince { id } ) ->
+            ( Deckbuilding
+                { dc
+                    | otherCards =
+                        if Dict.member id dc.otherCards then
+                            Dict.remove id dc.otherCards
+
+                        else
+                            Dict.insert id 1 dc.otherCards
+                }
+                fs
+                ps
+            , Cmd.none
+            )
+
         ( _, _ ) ->
             ( model, Cmd.none )
 
@@ -200,7 +217,7 @@ provinceSelector collection deck ps =
         ProvinceSelectorClosed ->
             Nothing
 
-        ProvinceSelectorOpen chosenTab ->
+        ProvinceSelectorOpen displayEl ->
             Just
                 (div [ class "provinceselector" ]
                     [ div [ class "provinceselector-tabs" ]
@@ -210,14 +227,16 @@ provinceSelector collection deck ps =
                                     label
                                         [ classList
                                             [ ( "provinceselector-tab", True )
-                                            , ( "provinceselector-tab--active", el == chosenTab )
+                                            , ( "provinceselector-tab--active", el == displayEl )
                                             ]
                                         ]
-                                        [ UI.Icon.small <| UI.Icon.element el
+                                        [ text <| Element.name el
+                                        , text " "
+                                        , UI.Icon.small <| UI.Icon.element el
                                         , input
                                             [ type_ "radio"
                                             , name "provinceSelectorTab"
-                                            , checked <| el == chosenTab
+                                            , checked <| el == displayEl
                                             , onClick <| ChangeProvinceSelector el
                                             ]
                                             []
@@ -225,43 +244,60 @@ provinceSelector collection deck ps =
                                 )
                         )
                     , div [ class "provinceselector-provinces" ] <|
-                        List.filterMap (viewProvinceLine deck chosenTab) (Dict.values collection)
+                        List.filterMap (viewProvinceLine deck displayEl) (Dict.values collection)
                     ]
                 )
 
 
 viewProvinceLine : Deck.Deck -> Element.Element -> Card.Card -> Maybe (Html Msg)
-viewProvinceLine deck chosenElement card =
-    let
-        returnIfPlayable props =
-            if props.clan == deck.stronghold.clan || props.clan == Neutral then
-                Just (text props.title)
+viewProvinceLine deck displayEl card =
+    Just card
+        |> Maybe.andThen
+            (\someCard ->
+                case someCard of
+                    Card.ProvinceType (Card.Province props) ->
+                        Just props
 
-            else
-                Nothing
-    in
-    case card of
-        Card.ProvinceType (Card.Province props) ->
-            case props.element of
-                Card.Tomoe ->
-                    returnIfPlayable props
-
-                Card.Single el ->
-                    if el == chosenElement then
-                        returnIfPlayable props
-
-                    else
+                    _ ->
                         Nothing
+            )
+        |> Maybe.andThen
+            (\provProps ->
+                case provProps.element of
+                    Card.Tomoe ->
+                        Just provProps
 
-                Card.Double elA elB ->
-                    if elA == chosenElement || elB == chosenElement then
-                        returnIfPlayable props
+                    Card.Single el ->
+                        if el == displayEl then
+                            Just provProps
 
-                    else
-                        Nothing
+                        else
+                            Nothing
 
-        _ ->
-            Nothing
+                    Card.Double elA elB ->
+                        if elA == displayEl || elB == displayEl then
+                            Just provProps
+
+                        else
+                            Nothing
+            )
+        |> Maybe.andThen
+            (\provProps ->
+                if provProps.clan == deck.stronghold.clan || provProps.clan == Neutral then
+                    Just provProps
+
+                else
+                    Nothing
+            )
+        |> Maybe.andThen
+            (\prov ->
+                Just <|
+                    button
+                        [ class "provinceselector-province"
+                        , onClick <| ToggleProvince prov
+                        ]
+                        [ UI.Card.img prov ]
+            )
 
 
 decklistActions : Maybe { startUpdateName : Msg, updateName : String -> Msg, doneUpdateName : String -> Msg }
@@ -309,11 +345,7 @@ viewStrongholdSelector strongholds =
                             [ class "strongholdpicker-item"
                             , onClick <| SelectedStronghold sh
                             ]
-                            [ img
-                                [ src <| Card.image sh.id
-                                , attribute "loading" "lazy"
-                                ]
-                                []
+                            [ UI.Card.img sh
                             ]
                     )
             )
