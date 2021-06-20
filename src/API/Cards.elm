@@ -3,6 +3,7 @@ module API.Cards exposing (fetchCards)
 import Card
 import Clan
 import Dict
+import Element exposing (Element)
 import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, map, maybe, string)
@@ -397,31 +398,15 @@ elements =
                 _ ->
                     Decode.fail "Invalid province element combination"
 
-        element =
-            string
-                |> Decode.andThen
-                    (\str ->
-                        case str of
-                            "air" ->
-                                Decode.succeed Card.Air
-
-                            "earth" ->
-                                Decode.succeed Card.Earth
-
-                            "fire" ->
-                                Decode.succeed Card.Fire
-
-                            "void" ->
-                                Decode.succeed Card.Void
-
-                            "water" ->
-                                Decode.succeed Card.Water
-
-                            _ ->
-                                Decode.fail "Invalid element"
-                    )
+        strToElement =
+            Element.fromString
+                >> Maybe.map Decode.succeed
+                >> Maybe.withDefault
+                    (Decode.fail "Invalid element")
     in
-    required "element" <| Decode.andThen toElementTuple <| list element
+    required "element" <|
+        Decode.andThen toElementTuple <|
+            list (Decode.andThen strToElement string)
 
 
 influenceValue : Decoder (Int -> b) -> Decoder b

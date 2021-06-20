@@ -4,6 +4,7 @@ import Card
 import Clan exposing (Clan(..))
 import Deck
 import Dict
+import Element
 import Gen.Params.Deckbuilder exposing (Params)
 import Gen.Route exposing (Route)
 import Html exposing (..)
@@ -37,7 +38,7 @@ page shared req =
 
 type Model
     = ChoosingStronghold (Maybe DeckCards)
-    | Deckbuilding DeckCards UI.Filters.Model
+    | Deckbuilding DeckCards UI.Filters.Model ProvinceSelector
 
 
 init : ( Model, Cmd Msg )
@@ -60,6 +61,11 @@ type DeckName
     | EditingName String (Maybe String)
 
 
+type ProvinceSelector
+    = ProvinceSelectorClosed
+    | ProvinceSelectorOpen Element.Element
+
+
 type Msg
     = SelectedStronghold Card.StrongholdProps
     | ChangedFilters UI.Filters.Model
@@ -67,6 +73,7 @@ type Msg
     | StartUpdateName
     | UpdateName String
     | DoneUpdateName String
+    | ChangeProvinceSelector Element.Element
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
@@ -83,9 +90,9 @@ update _ msg model =
                             , otherCards = Dict.empty
                             }
             in
-            ( Deckbuilding newDeck UI.Filters.init, Cmd.none )
+            ( Deckbuilding newDeck UI.Filters.init (ProvinceSelectorOpen Element.Air), Cmd.none )
 
-        ( Deckbuilding deck filters, StartUpdateName ) ->
+        ( Deckbuilding deck filters ps, StartUpdateName ) ->
             let
                 oldName =
                     case deck.name of
@@ -95,9 +102,9 @@ update _ msg model =
                         _ ->
                             Nothing
             in
-            ( Deckbuilding { deck | name = EditingName "" oldName } filters, Cmd.none )
+            ( Deckbuilding { deck | name = EditingName "" oldName } filters ps, Cmd.none )
 
-        ( Deckbuilding deck filters, UpdateName newName ) ->
+        ( Deckbuilding deck filters ps, UpdateName newName ) ->
             let
                 oldName =
                     case deck.name of
@@ -107,9 +114,9 @@ update _ msg model =
                         _ ->
                             Nothing
             in
-            ( Deckbuilding { deck | name = EditingName newName oldName } filters, Cmd.none )
+            ( Deckbuilding { deck | name = EditingName newName oldName } filters ps, Cmd.none )
 
-        ( Deckbuilding oldDeck filters, DoneUpdateName newName ) ->
+        ( Deckbuilding oldDeck filters ps, DoneUpdateName newName ) ->
             let
                 newDeck =
                     { oldDeck
@@ -121,12 +128,12 @@ update _ msg model =
                                 Named newName
                     }
             in
-            ( Deckbuilding newDeck filters, Cmd.none )
+            ( Deckbuilding newDeck filters ps, Cmd.none )
 
-        ( Deckbuilding deck _, ChangedFilters newFilters ) ->
-            ( Deckbuilding deck newFilters, Cmd.none )
+        ( Deckbuilding deck _ ps, ChangedFilters newFilters ) ->
+            ( Deckbuilding deck newFilters ps, Cmd.none )
 
-        ( Deckbuilding oldDeck filters, ChangedDecklist ( card, qty ) ) ->
+        ( Deckbuilding oldDeck filters ps, ChangedDecklist ( card, qty ) ) ->
             let
                 newDeck =
                     if qty == 0 then
@@ -135,7 +142,10 @@ update _ msg model =
                     else
                         { oldDeck | otherCards = Dict.insert (Card.id card) qty oldDeck.otherCards }
             in
-            ( Deckbuilding newDeck filters, Cmd.none )
+            ( Deckbuilding newDeck filters ps, Cmd.none )
+
+        ( Deckbuilding dc fs (ProvinceSelectorOpen _), ChangeProvinceSelector newElement ) ->
+            ( Deckbuilding dc fs (ProvinceSelectorOpen newElement), Cmd.none )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -163,7 +173,7 @@ view shared route model =
                 ( Shared.Loaded { cards }, ChoosingStronghold _ ) ->
                     [ List.filterMap toStronghold (Dict.values cards) |> viewStrongholdSelector ]
 
-                ( Shared.Loaded { cards }, Deckbuilding deckCards filters ) ->
+                ( Shared.Loaded { cards }, Deckbuilding deckCards filters ps ) ->
                     case intoDeck cards deckCards of
                         Nothing ->
                             [ UI.Error.view ]
@@ -173,29 +183,82 @@ view shared route model =
                                 [ decklistModel deckCards deck |> UI.Decklist.view decklistActions
                                 ]
                             , aside [ class "deckbuilder-builder" ]
-                                [ div [ class "deckbuilder-provinces" ] <| viewProvinceSelector cards deck
-                                , viewFilters filters
-                                , viewCardsOptions cards deckCards filters
-                                ]
+                                (List.filterMap identity
+                                    [ provinceSelector cards deck ps
+                                    , viewFilters filters
+                                    , viewCardsOptions cards deckCards filters
+                                    ]
+                                )
                             ]
     in
     UI.Page.view route viewsForStep
 
 
-viewProvinceSelector : CardCollection -> Deck.Deck -> List (Html Msg)
-viewProvinceSelector cards deck =
-    List.filterMap (viewProvinceLine deck) (Dict.values cards)
+provinceSelector : CardCollection -> Deck.Deck -> ProvinceSelector -> Maybe (Html Msg)
+provinceSelector collection deck ps =
+    case ps of
+        ProvinceSelectorClosed ->
+            Nothing
+
+        ProvinceSelectorOpen chosenTab ->
+            Just
+                (div [ class "provinceselector" ]
+                    [ div [ class "provinceselector-tabs" ]
+                        (Element.list
+                            |> List.map
+                                (\el ->
+                                    label
+                                        [ classList
+                                            [ ( "provinceselector-tab", True )
+                                            , ( "provinceselector-tab--active", el == chosenTab )
+                                            ]
+                                        ]
+                                        [ UI.Icon.small <| UI.Icon.element el
+                                        , input
+                                            [ type_ "radio"
+                                            , name "provinceSelectorTab"
+                                            , checked <| el == chosenTab
+                                            , onClick <| ChangeProvinceSelector el
+                                            ]
+                                            []
+                                        ]
+                                )
+                        )
+                    , div [ class "provinceselector-provinces" ] <|
+                        List.filterMap (viewProvinceLine deck chosenTab) (Dict.values collection)
+                    ]
+                )
 
 
-viewProvinceLine : Deck.Deck -> Card.Card -> Maybe (Html Msg)
-viewProvinceLine deck card =
-    case card of
-        Card.ProvinceType (Card.Province props) ->
+viewProvinceLine : Deck.Deck -> Element.Element -> Card.Card -> Maybe (Html Msg)
+viewProvinceLine deck chosenElement card =
+    let
+        returnIfPlayable props =
             if props.clan == deck.stronghold.clan || props.clan == Neutral then
                 Just (text props.title)
 
             else
                 Nothing
+    in
+    case card of
+        Card.ProvinceType (Card.Province props) ->
+            case props.element of
+                Card.Tomoe ->
+                    returnIfPlayable props
+
+                Card.Single el ->
+                    if el == chosenElement then
+                        returnIfPlayable props
+
+                    else
+                        Nothing
+
+                Card.Double elA elB ->
+                    if elA == chosenElement || elB == chosenElement then
+                        returnIfPlayable props
+
+                    else
+                        Nothing
 
         _ ->
             Nothing
@@ -269,15 +332,17 @@ intoDeck cards deckCards =
         |> Deck.fromDecklist cards
 
 
-viewFilters : UI.Filters.Model -> Html Msg
+viewFilters : UI.Filters.Model -> Maybe (Html Msg)
 viewFilters filters =
-    div [ class "filters" ]
-        [ p [] [ text "Filters" ]
-        , div [ class "filters-row" ] (UI.Filters.view filters ChangedFilters)
-        ]
+    Just
+        (div [ class "filters" ]
+            [ p [] [ text "Filters" ]
+            , div [ class "filters-row" ] (UI.Filters.view filters ChangedFilters)
+            ]
+        )
 
 
-viewCardsOptions : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> Html Msg
+viewCardsOptions : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> Maybe (Html Msg)
 viewCardsOptions cards deck filters =
     let
         cardRow card =
@@ -299,7 +364,8 @@ viewCardsOptions cards deck filters =
                                         [ text <| String.fromInt n
                                         , input
                                             [ type_ "radio"
-                                            , name <| Card.title card
+                                            , name <| "count-" ++ Card.title card
+                                            , checked <| n == copiesInDeck
                                             , onClick <| ChangedDecklist ( card, n )
                                             ]
                                             []
@@ -370,62 +436,64 @@ viewCardsOptions cards deck filters =
                 ]
             )
     in
-    div [ class "cards" ]
-        [ table [ class "cardlist" ]
-            [ thead [ class "cardlist-headers" ]
-                [ tr []
-                    [ th [ class "cardlist-quantity" ] [ text "Quantity" ]
-                    , th [ class "cardlist-clan" ] []
-                    , th [ class "cardlist-type" ] []
-                    , th [ class "cardlist-title" ] [ text "Title" ]
-                    , th [ class "cardlist-influence" ] [ UI.Icon.small UI.Icon.Influence1 ]
-                    , th [ class "cardlist-cost" ] [ UI.Icon.small UI.Icon.Fate ]
-                    , th [ class "cardlist-military" ] [ UI.Icon.small UI.Icon.Military ]
-                    , th [ class "cardlist-political" ] [ UI.Icon.small UI.Icon.Political ]
-                    , th [ class "cardlist-glory" ] [ text "G" ]
-                    , th [ class "cardlist-strength" ] [ text "S" ]
+    Just
+        (div [ class "cards" ]
+            [ table [ class "cardlist" ]
+                [ thead [ class "cardlist-headers" ]
+                    [ tr []
+                        [ th [ class "cardlist-quantity" ] [ text "Quantity" ]
+                        , th [ class "cardlist-clan" ] []
+                        , th [ class "cardlist-type" ] []
+                        , th [ class "cardlist-title" ] [ text "Title" ]
+                        , th [ class "cardlist-influence" ] [ UI.Icon.small UI.Icon.Influence1 ]
+                        , th [ class "cardlist-cost" ] [ UI.Icon.small UI.Icon.Fate ]
+                        , th [ class "cardlist-military" ] [ UI.Icon.small UI.Icon.Military ]
+                        , th [ class "cardlist-political" ] [ UI.Icon.small UI.Icon.Political ]
+                        , th [ class "cardlist-glory" ] [ text "G" ]
+                        , th [ class "cardlist-strength" ] [ text "S" ]
+                        ]
                     ]
-                ]
-            , Html.Keyed.node "tbody"
-                [ classList
-                    [ ( "cardlist-filtered--crab", UI.Filters.isClanFilteredOut filters Crab )
-                    , ( "cardlist-filtered--crane", UI.Filters.isClanFilteredOut filters Crane )
-                    , ( "cardlist-filtered--dragon", UI.Filters.isClanFilteredOut filters Dragon )
-                    , ( "cardlist-filtered--lion", UI.Filters.isClanFilteredOut filters Lion )
-                    , ( "cardlist-filtered--phoenix", UI.Filters.isClanFilteredOut filters Phoenix )
-                    , ( "cardlist-filtered--scorpion", UI.Filters.isClanFilteredOut filters Scorpion )
-                    , ( "cardlist-filtered--unicorn", UI.Filters.isClanFilteredOut filters Unicorn )
-                    , ( "cardlist-filtered--neutral", UI.Filters.isClanFilteredOut filters Neutral )
-                    , ( "cardlist-filtered--shadowlands", UI.Filters.isClanFilteredOut filters Shadowlands )
-                    , ( "cardlist-filtered--conflict", UI.Filters.isConflictFilteredOut filters )
-                    , ( "cardlist-filtered--dynasty", UI.Filters.isDynastyFilteredOut filters )
-                    , ( "cardlist-filtered--character", UI.Filters.isCharacterFilteredOut filters )
-                    , ( "cardlist-filtered--attachment", UI.Filters.isAttachmentFilteredOut filters )
-                    , ( "cardlist-filtered--event", UI.Filters.isEventFilteredOut filters )
-                    , ( "cardlist-filtered--holding", UI.Filters.isHoldingFilteredOut filters )
+                , Html.Keyed.node "tbody"
+                    [ classList
+                        [ ( "cardlist-filtered--crab", UI.Filters.isClanFilteredOut filters Crab )
+                        , ( "cardlist-filtered--crane", UI.Filters.isClanFilteredOut filters Crane )
+                        , ( "cardlist-filtered--dragon", UI.Filters.isClanFilteredOut filters Dragon )
+                        , ( "cardlist-filtered--lion", UI.Filters.isClanFilteredOut filters Lion )
+                        , ( "cardlist-filtered--phoenix", UI.Filters.isClanFilteredOut filters Phoenix )
+                        , ( "cardlist-filtered--scorpion", UI.Filters.isClanFilteredOut filters Scorpion )
+                        , ( "cardlist-filtered--unicorn", UI.Filters.isClanFilteredOut filters Unicorn )
+                        , ( "cardlist-filtered--neutral", UI.Filters.isClanFilteredOut filters Neutral )
+                        , ( "cardlist-filtered--shadowlands", UI.Filters.isClanFilteredOut filters Shadowlands )
+                        , ( "cardlist-filtered--conflict", UI.Filters.isConflictFilteredOut filters )
+                        , ( "cardlist-filtered--dynasty", UI.Filters.isDynastyFilteredOut filters )
+                        , ( "cardlist-filtered--character", UI.Filters.isCharacterFilteredOut filters )
+                        , ( "cardlist-filtered--attachment", UI.Filters.isAttachmentFilteredOut filters )
+                        , ( "cardlist-filtered--event", UI.Filters.isEventFilteredOut filters )
+                        , ( "cardlist-filtered--holding", UI.Filters.isHoldingFilteredOut filters )
+                        ]
                     ]
+                    (Dict.values cards
+                        |> List.filter
+                            (\card ->
+                                case card of
+                                    Card.StrongholdType _ ->
+                                        False
+
+                                    Card.RoleType _ ->
+                                        False
+
+                                    Card.ProvinceType _ ->
+                                        False
+
+                                    _ ->
+                                        True
+                            )
+                        |> List.sortWith (compositeSort deck)
+                        |> List.map cardRow
+                    )
                 ]
-                (Dict.values cards
-                    |> List.filter
-                        (\card ->
-                            case card of
-                                Card.StrongholdType _ ->
-                                    False
-
-                                Card.RoleType _ ->
-                                    False
-
-                                Card.ProvinceType _ ->
-                                    False
-
-                                _ ->
-                                    True
-                        )
-                    |> List.sortWith (compositeSort deck)
-                    |> List.map cardRow
-                )
             ]
-        ]
+        )
 
 
 compositeSort : DeckCards -> Card.Card -> Card.Card -> Order

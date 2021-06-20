@@ -1,6 +1,7 @@
 module Card exposing (..)
 
 import Clan exposing (Clan)
+import Element exposing (Element)
 import Format exposing (Format)
 import Numerical exposing (Numerical)
 
@@ -26,18 +27,6 @@ type RoleTypes
     | EarthRole
     | KeeperRole
     | SeekerRole
-
-
-
--- ELEMENTS
-
-
-type Element
-    = Air
-    | Earth
-    | Fire
-    | Void
-    | Water
 
 
 type ProvinceElement
