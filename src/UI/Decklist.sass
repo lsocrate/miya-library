@@ -27,7 +27,9 @@
   &-influence--ilegal
     font-weight: bold
     color: var(--color-strong)
-
+  &-influence_entry
+    display: inline-block
+    margin-left: 0.5em
   &-dynasty_deck,
   &-conflict_deck
     grid-row: 3/4
@@ -43,3 +45,11 @@
     padding: 0
   &-cardrow
     display: block
+
+$clans: crab,crane,dragon,lion,phoenix,scorpion,unicorn
+
+@each $clan in $clans
+  .decklist-influencemarker--#{$clan}
+    color: var(--color-#{$clan}--light)
+  .decklist-influence_entry--#{$clan}
+    color: var(--color-#{$clan}--light)

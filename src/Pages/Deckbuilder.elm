@@ -43,11 +43,8 @@ type Model
 
 init : ( Model, Cmd Msg )
 init =
-    ( ChoosingStronghold Nothing, Cmd.none )
-
-
-
--- ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
+    -- ( ChoosingStronghold Nothing, Cmd.none )
+    ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
 
 
 type alias DeckCards =

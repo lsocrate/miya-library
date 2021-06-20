@@ -44,22 +44,40 @@ view actions { name, author, deck, editingName } =
 
         cardBlockConflict =
             cardBlock .title
-                (\{ influenceCost } ->
-                    case influenceCost of
-                        Just 1 ->
-                            [ text " ", UI.Icon.small UI.Icon.Influence1 ]
+                (\{ influenceCost, clan } ->
+                    if clan == deck.stronghold.clan then
+                        []
 
-                        Just 2 ->
-                            [ text " ", UI.Icon.small UI.Icon.Influence2 ]
+                    else
+                        [ span
+                            [ classList
+                                [ ( "decklist-influencemarker", True )
+                                , ( "decklist-influencemarker--crab", clan == Crab )
+                                , ( "decklist-influencemarker--crane", clan == Crane )
+                                , ( "decklist-influencemarker--dragon", clan == Dragon )
+                                , ( "decklist-influencemarker--lion", clan == Lion )
+                                , ( "decklist-influencemarker--phoenix", clan == Phoenix )
+                                , ( "decklist-influencemarker--scorpion", clan == Scorpion )
+                                , ( "decklist-influencemarker--unicorn", clan == Unicorn )
+                                ]
+                            ]
+                            (case influenceCost of
+                                Just 1 ->
+                                    [ text " ", UI.Icon.small UI.Icon.Influence1 ]
 
-                        Just 3 ->
-                            [ text " ", UI.Icon.small UI.Icon.Influence3 ]
+                                Just 2 ->
+                                    [ text " ", UI.Icon.small UI.Icon.Influence2 ]
 
-                        Just 4 ->
-                            [ text " ", UI.Icon.small UI.Icon.Influence4 ]
+                                Just 3 ->
+                                    [ text " ", UI.Icon.small UI.Icon.Influence3 ]
 
-                        _ ->
-                            []
+                                Just 4 ->
+                                    [ text " ", UI.Icon.small UI.Icon.Influence4 ]
+
+                                _ ->
+                                    []
+                            )
+                        ]
                 )
     in
     div [ class "decklist" ]
@@ -128,7 +146,18 @@ influenceDescription maxInfluence influence =
         influenceIcons =
             List.map
                 (\( clan, ( cardCount, _ ) ) ->
-                    span []
+                    span
+                        [ classList
+                            [ ( "decklist-influence_entry", True )
+                            , ( "decklist-influence_entry--crab", clan == Crab )
+                            , ( "decklist-influence_entry--crane", clan == Crane )
+                            , ( "decklist-influence_entry--dragon", clan == Dragon )
+                            , ( "decklist-influence_entry--lion", clan == Lion )
+                            , ( "decklist-influence_entry--phoenix", clan == Phoenix )
+                            , ( "decklist-influence_entry--scorpion", clan == Scorpion )
+                            , ( "decklist-influence_entry--unicorn", clan == Unicorn )
+                            ]
+                        ]
                         [ text <| String.fromInt cardCount
                         , text " "
                         , UI.Icon.small <| UI.Icon.clan clan
@@ -137,12 +166,17 @@ influenceDescription maxInfluence influence =
                 influence
     in
     p [ classList [ ( "decklist-influence--ilegal", spentInfluence > maxInfluence ) ] ]
-        ([ strong [] [ text "Influence:" ]
+        ([ strong [] [ text "Influence: " ]
          , span []
             [ text <| String.fromInt spentInfluence ]
          , text " of "
          , text <| String.fromInt maxInfluence
-         , text " - "
+         , text <|
+            if List.isEmpty influence then
+                ""
+
+            else
+                " • "
          ]
             ++ influenceIcons
         )
@@ -176,7 +210,7 @@ cardBlock cardTitle cardInfluenceInfo sectionTitle sectionCards =
                 Just <|
                     li [ class "decklist-cardrow" ]
                         ([ text <| String.fromInt n
-                         , text "x "
+                         , text " × "
                          , text <| cardTitle card
                          ]
                             ++ cardInfluenceInfo card
