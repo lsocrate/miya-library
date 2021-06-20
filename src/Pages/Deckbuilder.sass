@@ -8,9 +8,17 @@
     margin: 0
     padding: 0
     display: grid
-    grid-template-columns: repeat(5, 1fr)
     gap: 10px 15px
     place-items: start center
+    grid-template-columns: repeat(2, 1fr)
+    @media screen and ( min-width: 710px)
+      grid-template-columns: repeat(3, 1fr)
+    @media screen and ( min-width: 945px)
+      grid-template-columns: repeat(4, 1fr)
+    @media screen and ( min-width: 1200px)
+      grid-template-columns: repeat(5, 1fr)
+    @media screen and ( min-width: 1600px)
+      grid-template-columns: repeat(6, 1fr)
 
   &-item
     list-style: none
@@ -44,6 +52,7 @@
   margin-top: 10px
   width: 100%
   border-collapse: collapse
+  table-layout: fixed
 
   td
     padding: 0
@@ -77,17 +86,19 @@
     input
       display: none
 
-  &-clan, &-type
-    width: 42px
+  &-clan
+    width: 40px
     text-align: center
   &-type
+    width: 30px
+    text-align: center
     color: var(--color-accent)
   &-title
-    font-size: 16px
+    font-size: 14px
     line-height: 20px
 
   &-influence
-    width: 2rem
+    width: 24px
     text-align: right
 
   &-cost,

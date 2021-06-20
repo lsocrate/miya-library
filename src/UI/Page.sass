@@ -5,38 +5,44 @@ body
   display: grid
   gap: 20px
   grid-template-columns: repeat(12, 1fr)
-  grid-template-rows: 80px auto 160px
+  grid-template-rows: 60px auto 160px
   justify-content: stretch
   min-height: 100vh
+  @media screen and ( min-width: 1024px)
+    grid-template-rows: 80px auto 160px
 
 .page-header
   background-color: var(--color-dark)
   display: flex
   grid-column: 1 / 13
   grid-row: 1 / 2
-  padding: 20px $sideMargin
+  padding: 10px $sideMargin
   @media screen and ( min-width: 1024px)
     padding: 20px ($sideMargin*2)
 
 .header-logo
-  flex: 0 0 200px
+  flex: 0 0 50%
+  @media screen and ( min-width: 1024px)
+    flex: 0 0 200px
   img
     width: 100%
+    max-height: 100%
 
 .nav
-  flex: 1 1 auto
-  padding: 0 0 0 40px
+  flex: 0 0 50%
+  @media screen and ( min-width: 1024px)
+    flex: 1 1 auto
 
   &-list
-    margin: 0
+    margin: 0 0 0 40px
     padding: 0
 
   &-item
     display: inline-block
 
   a
-    color: #000
-    text-decoration: underline 2px var(--color-accent)
+    color: var(--color-accent)
+    text-decoration: underline 2px var(--color-strong)
 
 .page-container
   grid-column: 1 / 13

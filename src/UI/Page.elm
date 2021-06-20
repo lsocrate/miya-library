@@ -29,6 +29,7 @@ view currentRoute mainViews =
                 [ a [ href <| Route.toHref Route.Home_ ]
                     [ img
                         [ src "/assets/logo-header.svg"
+                        , title "Miya Library"
                         ]
                         []
                     ]
