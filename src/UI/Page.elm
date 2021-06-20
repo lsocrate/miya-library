@@ -27,7 +27,10 @@ view currentRoute mainViews =
         [ header [ class "page-header" ]
             [ div [ class "header-logo" ]
                 [ a [ href <| Route.toHref Route.Home_ ]
-                    [ text "Miya Library"
+                    [ img
+                        [ src "/assets/logo-header.svg"
+                        ]
+                        []
                     ]
                 ]
             , nav [ class "nav" ]
