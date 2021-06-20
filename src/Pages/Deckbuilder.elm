@@ -10,7 +10,6 @@ import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Html.Keyed
 import Numerical
 import Page
 import Request
@@ -51,7 +50,7 @@ init =
 type alias DeckCards =
     { stronghold : Card.StrongholdProps
     , name : DeckName
-    , role : Maybe String
+    , role : Maybe Card.RoleProps
     , otherCards : Dict.Dict String Int
     }
 
@@ -364,7 +363,7 @@ intoDeck : CardCollection -> DeckCards -> Maybe Deck.Deck
 intoDeck cards deckCards =
     [ Dict.toList deckCards.otherCards
     , [ ( deckCards.stronghold.id, 1 ) ]
-    , Maybe.map (\roleId -> [ ( roleId, 1 ) ]) deckCards.role
+    , Maybe.map (\role -> [ ( role.id, 1 ) ]) deckCards.role
         |> Maybe.withDefault []
     ]
         |> List.concat
@@ -413,8 +412,7 @@ viewCardsOptions cards deck filters =
                                 )
                         )
             in
-            ( Card.id card
-            , tr
+            tr
                 [ classList
                     [ ( "cardlist-row", True )
                     , ( "cardlist-row--crab", Crab == Card.clan card )
@@ -435,25 +433,29 @@ viewCardsOptions cards deck filters =
                     ]
                 ]
                 [ td [ class "cardlist-quantity" ] [ picker ]
-                , td [ class "cardlist-clan" ] [ UI.Icon.small <| UI.Icon.clan <| Card.clan card ]
+                , td [ class "cardlist-clan" ] [ UI.Icon.large <| UI.Icon.clan <| Card.clan card ]
                 , td [ class "cardlist-type" ] [ text <| Card.typeIcon card ]
                 , td [ class "cardlist-title" ] [ text <| Card.title card ]
                 , td [ class "cardlist-influence" ]
-                    (case Card.influence card of
-                        Just 1 ->
-                            [ UI.Icon.small UI.Icon.Influence1 ]
+                    (if deck.stronghold.clan == Card.clan card then
+                        []
 
-                        Just 2 ->
-                            [ UI.Icon.small UI.Icon.Influence2 ]
+                     else
+                        case Card.influence card of
+                            Just 1 ->
+                                [ UI.Icon.medium UI.Icon.Influence1 ]
 
-                        Just 3 ->
-                            [ UI.Icon.small UI.Icon.Influence3 ]
+                            Just 2 ->
+                                [ UI.Icon.medium UI.Icon.Influence2 ]
 
-                        Just 4 ->
-                            [ UI.Icon.small UI.Icon.Influence4 ]
+                            Just 3 ->
+                                [ UI.Icon.medium UI.Icon.Influence3 ]
 
-                        _ ->
-                            []
+                            Just 4 ->
+                                [ UI.Icon.medium UI.Icon.Influence4 ]
+
+                            _ ->
+                                []
                     )
                 , td [ class "cardlist-cost" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.cost card ]
@@ -466,7 +468,6 @@ viewCardsOptions cards deck filters =
                 , td [ class "cardlist-strength" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.strength card ]
                 ]
-            )
     in
     Just
         (div [ class "cards" ]
@@ -485,7 +486,7 @@ viewCardsOptions cards deck filters =
                         , th [ class "cardlist-strength" ] [ text "S" ]
                         ]
                     ]
-                , Html.Keyed.node "tbody"
+                , tbody
                     [ classList
                         [ ( "cardlist-filtered--crab", UI.Filters.isClanFilteredOut filters Crab )
                         , ( "cardlist-filtered--crane", UI.Filters.isClanFilteredOut filters Crane )
@@ -518,7 +519,7 @@ viewCardsOptions cards deck filters =
                                         False
 
                                     _ ->
-                                        True
+                                        Card.isPlayable deck.stronghold.clan deck.role card
                             )
                         |> List.sortWith (compositeSort deck)
                         |> List.map cardRow

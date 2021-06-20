@@ -33,8 +33,6 @@
 // FILTERS
 // ------------
 .filters
-  position: sticky
-  top: 0
   &-row
     display: flex
     flex-wrap: wrap
@@ -43,25 +41,26 @@
 // CARD PICKER
 // ------------
 .cardlist
+  margin-top: 10px
   width: 100%
   border-collapse: collapse
 
-  th, td
+  td
     padding: 0
 
   tbody tr
     border-bottom: 1px solid var(--color-invisiline)
 
   &-headers
-    position: sticky
-    top: 80px
+    th
+      padding: 0 0 10px
 
   &-quantity
     width: 120px
     user-select: none
 
   &-option
-    background: #fff
+    background: var(--color-bg)
     display: inline-block
     width: 30px
     height: 40px
@@ -69,16 +68,17 @@
     cursor: pointer
     font-size: 18px
     line-height: 40px
+    box-shadow: inset 0 0 2px var(--color-text)
 
     &--active
-      background: #c0f
+      background: var(--color-weak)
       font-weight: bold
 
     input
       display: none
 
   &-clan, &-type
-    width: 1rem
+    width: 42px
     text-align: center
   &-title
     font-size: 16px
@@ -104,51 +104,17 @@
     @media screen and ( min-width: 667px)
       display: table-cell
 
-.cardlist-filtered--crab
-  .cardlist-row--crab
-    display: none
-.cardlist-filtered--crane
-  .cardlist-row--crane
-    display: none
-.cardlist-filtered--dragon
-  .cardlist-row--dragon
-    display: none
-.cardlist-filtered--lion
-  .cardlist-row--lion
-    display: none
-.cardlist-filtered--phoenix
-  .cardlist-row--phoenix
-    display: none
-.cardlist-filtered--scorpion
-  .cardlist-row--scorpion
-    display: none
-.cardlist-filtered--unicorn
-  .cardlist-row--unicorn
-    display: none
-.cardlist-filtered--neutral
-  .cardlist-row--neutral
-    display: none
-.cardlist-filtered--shadowlands
-  .cardlist-row--shadowlands
-    display: none
-.cardlist-filtered--conflict
-  .cardlist-row--conflict
-    display: none
-.cardlist-filtered--dynasty
-  .cardlist-row--dynasty
-    display: none
-.cardlist-filtered--character
-  .cardlist-row--character
-    display: none
-.cardlist-filtered--attachment
-  .cardlist-row--attachment
-    display: none
-.cardlist-filtered--event
-  .cardlist-row--event
-    display: none
-.cardlist-filtered--holding
-  .cardlist-row--holding
-    display: none
+$filters: crab, crane, dragon, lion, phoenix, scorpion, unicorn, neutral, shadowlands, conflict, dynasty, character, attachment, event, holding,
+@each $filterType in $filters
+  .cardlist-filtered--#{$filterType}
+    .cardlist-row--#{$filterType}
+      display: none
+
+$clans: crab, crane, dragon, lion, phoenix, scorpion, unicorn, neutral, shadowlands
+@each $clan in $clans
+  .cardlist-row--#{$clan}
+    .cardlist-clan,.cardlist-influence
+      color: var(--color-#{$clan})
 
 // ------------
 // PROVINCE SELECTOR

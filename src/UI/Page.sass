@@ -12,9 +12,11 @@ body
 .page-header
   background-color: var(--color-dark)
   display: flex
-  padding: 20px $sideMargin
   grid-column: 1 / 13
   grid-row: 1 / 2
+  padding: 20px $sideMargin
+  @media screen and ( min-width: 1024px)
+    padding: 20px ($sideMargin*2)
 
 .header-logo
   flex: 0 0 200px
@@ -34,15 +36,19 @@ body
     text-decoration: underline 2px var(--color-accent)
 
 .page-container
-  padding: 0 $sideMargin
   grid-column: 1 / 13
   grid-row: 2 / 3
   display: grid
   gap: 20px
   grid-template-columns: repeat(12, 1fr)
+  padding: 0 $sideMargin
+  @media screen and ( min-width: 1024px)
+    padding: 0 ($sideMargin*2)
 
 .page-footer
   background-color: var(--color-strong)
   grid-column: 1/13
   grid-row: 3 / 4
   padding: 20px $sideMargin 40px
+  @media screen and ( min-width: 1024px)
+    padding: 20px ($sideMargin*2) 40px

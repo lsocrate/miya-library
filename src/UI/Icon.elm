@@ -1,4 +1,4 @@
-module UI.Icon exposing (Icon(..), clan, element, medium, small)
+module UI.Icon exposing (Icon(..), clan, element, large, medium, small)
 
 import Clan
 import Element
@@ -102,6 +102,11 @@ small =
 medium : Icon -> Html msg
 medium =
     icon (class "icon--medium")
+
+
+large : Icon -> Html msg
+large =
+    icon (class "icon--large")
 
 
 icon : Attribute msg -> Icon -> Html msg

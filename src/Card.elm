@@ -24,7 +24,7 @@ uniqueTxt =
 -- ROLES
 
 
-type RoleTypes
+type RoleType
     = AirRole
     | WaterRole
     | FireRole
@@ -106,7 +106,7 @@ type Event
 type alias RoleProps =
     { id : String
     , title : String
-    , traits : List RoleTypes
+    , traits : List RoleType
     , abilities : List String
     , formatRequirement : Maybe Format
     , image : String
@@ -143,7 +143,7 @@ type alias ProvinceProps =
     , strength : Numerical
     , element : ProvinceElement
     , abilities : List String
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -159,7 +159,7 @@ type alias DynastyEventProps =
     , traits : List String
     , cost : Numerical
     , abilities : List String
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -176,7 +176,7 @@ type alias ConflictEventProps =
     , cost : Numerical
     , abilities : List String
     , influenceCost : Maybe Int
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -193,7 +193,7 @@ type alias HoldingProps =
     , traits : List String
     , bonusStrength : Numerical
     , abilities : List String
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -213,7 +213,7 @@ type alias AttachmentProps =
     , politicalSkillBonus : Numerical
     , abilities : List String
     , influenceCost : Maybe Int
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -233,7 +233,7 @@ type alias DynastyCharacterProps =
     , politicalSkill : Numerical
     , glory : Int
     , abilities : List String
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -254,7 +254,7 @@ type alias ConflictCharacterProps =
     , glory : Int
     , abilities : List String
     , influenceCost : Maybe Int
-    , roleRequirement : Maybe RoleTypes
+    , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
     , cycle : String
@@ -555,6 +555,56 @@ isDynasty card =
 
         _ ->
             False
+
+
+isPlayable : Clan -> Maybe RoleProps -> Card -> Bool
+isPlayable deckClan role card =
+    let
+        allowedByClan x =
+            x.clan == deckClan || x.clan == Clan.Neutral
+
+        allowedByRole x =
+            case ( x.roleRequirement, role ) of
+                ( Nothing, _ ) ->
+                    True
+
+                ( Just _, Nothing ) ->
+                    False
+
+                ( Just req, Just { traits } ) ->
+                    List.member req traits
+
+        splashable { influenceCost } =
+            Maybe.map (always True) influenceCost
+                |> Maybe.withDefault False
+    in
+    case card of
+        RoleType _ ->
+            True
+
+        StrongholdType (Stronghold props) ->
+            allowedByClan props
+
+        CharacterType (DynastyCharacter props) ->
+            allowedByRole props && allowedByClan props
+
+        EventType (DynastyEvent props) ->
+            allowedByRole props && allowedByClan props
+
+        HoldingType (Holding props) ->
+            allowedByRole props && allowedByClan props
+
+        ProvinceType (Province props) ->
+            allowedByRole props && allowedByClan props
+
+        AttachmentType (Attachment props) ->
+            allowedByRole props && (allowedByClan props || splashable props)
+
+        CharacterType (ConflictCharacter props) ->
+            allowedByRole props && (allowedByClan props || splashable props)
+
+        EventType (ConflictEvent props) ->
+            allowedByRole props && (allowedByClan props || splashable props)
 
 
 isCharacter : Card -> Bool

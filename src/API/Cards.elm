@@ -345,7 +345,7 @@ influenceCost =
     optional "influence_cost" (maybe int) Nothing
 
 
-roleRequirement : Decoder (Maybe Card.RoleTypes -> b) -> Decoder b
+roleRequirement : Decoder (Maybe Card.RoleType -> b) -> Decoder b
 roleRequirement =
     let
         toRoleRequirement =
@@ -530,7 +530,7 @@ clan =
     required "clan" <| (string |> Decode.andThen decodeClan)
 
 
-roleTraits : Decoder (List Card.RoleTypes -> b) -> Decoder b
+roleTraits : Decoder (List Card.RoleType -> b) -> Decoder b
 roleTraits =
     let
         toRoleTrait string =

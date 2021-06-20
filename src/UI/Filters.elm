@@ -284,88 +284,94 @@ isHoldingFilteredOut =
 
 view : Model -> (Model -> msg) -> List (Html msg)
 view model changeMsg =
-    let
-        clanToggle clan =
-            label
-                [ classList
-                    [ ( "filterblock-item", True )
-                    , ( "filterblock-item--active", isActiveClan model clan )
-                    ]
-                ]
-                [ Icon.medium <| Icon.clan clan
-                , input
-                    [ type_ "checkbox"
-                    , onCheck (changeMsg << toggleClan model clan)
-                    ]
-                    []
-                ]
-
-        cardBackToggle cardBack =
-            label
-                [ classList
-                    [ ( "filterblock-item", True )
-                    , ( "filterblock-item--conflict", cardBack == Conflict )
-                    , ( "filterblock-item--dynasty", cardBack == Dynasty )
-                    , ( "filterblock-item--active", isBackActive model cardBack )
-                    ]
-                ]
-                [ div
-                    [ class "filterblock-icon" ]
-                    [ Icon.medium Icon.Fiverings ]
-                , input
-                    [ type_ "checkbox"
-                    , onCheck (changeMsg << toggleBack model cardBack)
-                    ]
-                    []
-                ]
-
-        cardTypeToggle cardType =
-            label
-                [ classList
-                    [ ( "filterblock-item", True )
-                    , ( "filterblock-item--active", isCardTypeActive model cardType )
-                    ]
-                ]
-                [ div
-                    [ class "filterblock-icon" ]
-                    [ Icon.medium
-                        (case cardType of
-                            Character ->
-                                Icon.Character
-
-                            Attachment ->
-                                Icon.Attachment
-
-                            Event ->
-                                Icon.Event
-
-                            Holding ->
-                                Icon.Holding
-                        )
-                    ]
-                , input
-                    [ type_ "checkbox"
-                    , onCheck (changeMsg << toggleCardType model cardType)
-                    ]
-                    []
-                ]
-    in
     [ div [ class "filterblock", class "filterblock--clans" ] <|
-        List.map clanToggle
-            [ Crab
-            , Crane
-            , Dragon
-            , Lion
-            , Phoenix
-            , Scorpion
-            , Unicorn
-            , Neutral
-            , Shadowlands
-            ]
+        List.map (clanToggle model changeMsg)
+            [ Crab, Crane, Dragon, Lion, Phoenix, Scorpion, Unicorn, Neutral, Shadowlands ]
     , div [ class "filterblock", class "filterblock--backs" ] <|
-        List.map cardBackToggle
+        List.map (cardBackToggle model changeMsg)
             [ Dynasty, Conflict ]
     , div [ class "filterblock", class "filterblock--types" ] <|
-        List.map cardTypeToggle
+        List.map (cardTypeToggle model changeMsg)
             [ Character, Attachment, Event, Holding ]
     ]
+
+
+clanToggle : Model -> (Model -> msg) -> Clan -> Html msg
+clanToggle model changeMsg clan =
+    label
+        [ classList
+            [ ( "filterblock-item", True )
+            , ( "filterblock-item--active", isActiveClan model clan )
+            , ( "filterblock-item--crab", clan == Crab )
+            , ( "filterblock-item--crane", clan == Crane )
+            , ( "filterblock-item--dragon", clan == Dragon )
+            , ( "filterblock-item--lion", clan == Lion )
+            , ( "filterblock-item--phoenix", clan == Phoenix )
+            , ( "filterblock-item--scorpion", clan == Scorpion )
+            , ( "filterblock-item--unicorn", clan == Unicorn )
+            , ( "filterblock-item--neutral", clan == Neutral )
+            , ( "filterblock-item--shadowlands", clan == Shadowlands )
+            ]
+        ]
+        [ Icon.large <| Icon.clan clan
+        , input
+            [ type_ "checkbox"
+            , onCheck (changeMsg << toggleClan model clan)
+            ]
+            []
+        ]
+
+
+cardBackToggle : Model -> (Model -> msg) -> Back -> Html msg
+cardBackToggle model changeMsg cardBack =
+    label
+        [ classList
+            [ ( "filterblock-item", True )
+            , ( "filterblock-item--conflict", cardBack == Conflict )
+            , ( "filterblock-item--dynasty", cardBack == Dynasty )
+            , ( "filterblock-item--active", isBackActive model cardBack )
+            ]
+        ]
+        [ div
+            [ class "filterblock-icon" ]
+            [ Icon.large Icon.Fiverings ]
+        , input
+            [ type_ "checkbox"
+            , onCheck (changeMsg << toggleBack model cardBack)
+            ]
+            []
+        ]
+
+
+cardTypeToggle : Model -> (Model -> msg) -> CardType -> Html msg
+cardTypeToggle model changeMsg cardType =
+    label
+        [ classList
+            [ ( "filterblock-item", True )
+            , ( "filterblock-item--active", isCardTypeActive model cardType )
+            , ( "filterblock-item--type", True )
+            ]
+        ]
+        [ div
+            [ class "filterblock-icon" ]
+            [ Icon.large
+                (case cardType of
+                    Character ->
+                        Icon.Character
+
+                    Attachment ->
+                        Icon.Attachment
+
+                    Event ->
+                        Icon.Event
+
+                    Holding ->
+                        Icon.Holding
+                )
+            ]
+        , input
+            [ type_ "checkbox"
+            , onCheck (changeMsg << toggleCardType model cardType)
+            ]
+            []
+        ]
