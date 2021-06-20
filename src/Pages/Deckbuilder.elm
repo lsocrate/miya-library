@@ -434,7 +434,23 @@ viewCardsOptions cards deck filters =
                 ]
                 [ td [ class "cardlist-quantity" ] [ picker ]
                 , td [ class "cardlist-clan" ] [ UI.Icon.large <| UI.Icon.clan <| Card.clan card ]
-                , td [ class "cardlist-type" ] [ text <| Card.typeIcon card ]
+                , td [ class "cardlist-type" ]
+                    (case card of
+                        Card.AttachmentType _ ->
+                            [ UI.Icon.medium UI.Icon.Attachment ]
+
+                        Card.CharacterType _ ->
+                            [ UI.Icon.medium UI.Icon.Character ]
+
+                        Card.EventType _ ->
+                            [ UI.Icon.medium UI.Icon.Event ]
+
+                        Card.HoldingType _ ->
+                            [ UI.Icon.medium UI.Icon.Holding ]
+
+                        _ ->
+                            []
+                    )
                 , td [ class "cardlist-title" ] [ text <| Card.title card ]
                 , td [ class "cardlist-influence" ]
                     (if deck.stronghold.clan == Card.clan card then

@@ -500,31 +500,6 @@ isUnique card =
             False
 
 
-typeIcon : Card -> String
-typeIcon card =
-    case card of
-        StrongholdType _ ->
-            "🏯"
-
-        ProvinceType _ ->
-            "⛰️"
-
-        HoldingType _ ->
-            "🏨"
-
-        CharacterType _ ->
-            "🧑"
-
-        AttachmentType _ ->
-            "🗡️"
-
-        EventType _ ->
-            "⚡"
-
-        RoleType _ ->
-            "📇"
-
-
 isConflict : Card -> Bool
 isConflict card =
     case card of
