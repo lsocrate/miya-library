@@ -1,3 +1,4 @@
+$sideMargin: 10px
 body
   align-content: stretch
   background-color: var(--color-bg)
@@ -11,7 +12,7 @@ body
 .page-header
   background-color: var(--color-dark)
   display: flex
-  padding: 20px
+  padding: 20px $sideMargin
   grid-column: 1 / 13
   grid-row: 1 / 2
 
@@ -33,7 +34,7 @@ body
     text-decoration: underline 2px var(--color-accent)
 
 .page-container
-  padding: 0 20px
+  padding: 0 $sideMargin
   grid-column: 1 / 13
   grid-row: 2 / 3
   display: grid
@@ -44,4 +45,4 @@ body
   background-color: var(--color-strong)
   grid-column: 1/13
   grid-row: 3 / 4
-  padding: 20px 20px 40px
+  padding: 20px $sideMargin 40px

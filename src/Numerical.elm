@@ -19,7 +19,7 @@ toString num =
             String.fromInt n
 
         VariableValue ->
-            "X"
+            "✗"
 
         FixedModifier n ->
             if n < 0 then
@@ -29,4 +29,4 @@ toString num =
                 "+" ++ String.fromInt n
 
         VariableModifier ->
-            "+X"
+            "+✗"

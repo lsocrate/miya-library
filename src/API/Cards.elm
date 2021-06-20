@@ -3,7 +3,7 @@ module API.Cards exposing (fetchCards)
 import Card
 import Clan
 import Dict
-import Element exposing (Element)
+import Element
 import Format
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, map, maybe, string)

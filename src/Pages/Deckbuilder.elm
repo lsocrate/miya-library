@@ -74,7 +74,8 @@ type Msg
     | StartUpdateName
     | UpdateName String
     | DoneUpdateName String
-    | ChangeProvinceSelector Element.Element
+    | OpenProvinceSelector Element.Element
+    | CloseProvinceSelector
     | ToggleProvince Card.ProvinceProps
 
 
@@ -92,7 +93,7 @@ update _ msg model =
                             , otherCards = Dict.empty
                             }
             in
-            ( Deckbuilding newDeck UI.Filters.init (ProvinceSelectorOpen Element.Air), Cmd.none )
+            ( Deckbuilding newDeck UI.Filters.init ProvinceSelectorClosed, Cmd.none )
 
         ( Deckbuilding deck filters ps, StartUpdateName ) ->
             let
@@ -146,8 +147,11 @@ update _ msg model =
             in
             ( Deckbuilding newDeck filters ps, Cmd.none )
 
-        ( Deckbuilding dc fs (ProvinceSelectorOpen _), ChangeProvinceSelector newElement ) ->
+        ( Deckbuilding dc fs (ProvinceSelectorOpen _), OpenProvinceSelector newElement ) ->
             ( Deckbuilding dc fs (ProvinceSelectorOpen newElement), Cmd.none )
+
+        ( Deckbuilding dc fs _, CloseProvinceSelector ) ->
+            ( Deckbuilding dc fs ProvinceSelectorClosed, Cmd.none )
 
         ( Deckbuilding dc fs ps, ToggleProvince { id } ) ->
             ( Deckbuilding
@@ -220,7 +224,11 @@ provinceSelector collection deck ps =
         ProvinceSelectorOpen displayEl ->
             Just
                 (div [ class "provinceselector" ]
-                    [ div [ class "provinceselector-tabs" ]
+                    [ div [ class "provinceselector-dismiss" ]
+                        [ button [ onClick CloseProvinceSelector ]
+                            [ text "Close province selector" ]
+                        ]
+                    , div [ class "provinceselector-tabs" ]
                         (Element.list
                             |> List.map
                                 (\el ->
@@ -237,7 +245,7 @@ provinceSelector collection deck ps =
                                             [ type_ "radio"
                                             , name "provinceSelectorTab"
                                             , checked <| el == displayEl
-                                            , onClick <| ChangeProvinceSelector el
+                                            , onClick <| OpenProvinceSelector el
                                             ]
                                             []
                                         ]
@@ -429,15 +437,7 @@ viewCardsOptions cards deck filters =
                 [ td [ class "cardlist-quantity" ] [ picker ]
                 , td [ class "cardlist-clan" ] [ UI.Icon.small <| UI.Icon.clan <| Card.clan card ]
                 , td [ class "cardlist-type" ] [ text <| Card.typeIcon card ]
-                , td [ class "cardlist-title" ]
-                    [ text (Card.title card)
-                    , text <|
-                        if Card.isUnique card then
-                            " ⁕"
-
-                        else
-                            ""
-                    ]
+                , td [ class "cardlist-title" ] [ text <| Card.title card ]
                 , td [ class "cardlist-influence" ]
                     (case Card.influence card of
                         Just 1 ->

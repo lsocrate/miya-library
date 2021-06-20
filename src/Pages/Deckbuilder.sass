@@ -44,39 +44,45 @@
 // ------------
 .cardlist
   width: 100%
+  border-collapse: collapse
+
+  th, td
+    padding: 0
+
+  tbody tr
+    border-bottom: 1px solid var(--color-invisiline)
+
   &-headers
     position: sticky
     top: 80px
 
+  &-quantity
+    width: 120px
+    user-select: none
+
   &-option
     background: #fff
     display: inline-block
-    width: 20px
-    height: 20px
+    width: 30px
+    height: 40px
     text-align: center
-    border-color: #000
-    border-style: solid
-    border-width: 1px 1px 1px 0
     cursor: pointer
+    font-size: 18px
+    line-height: 40px
 
     &--active
-      background: #fc0
+      background: #c0f
+      font-weight: bold
 
-  &:first-child
-    border-width: 1px
+    input
+      display: none
 
-  input
-    display: none
-
-  &-quantity
-    width: 85px
-    user-select: none
-
-  &-clan,
-
-  &-type
+  &-clan, &-type
     width: 1rem
     text-align: center
+  &-title
+    font-size: 16px
+    line-height: 20px
 
   &-influence
     width: 2rem
@@ -90,6 +96,13 @@
     width: 1.5rem
     text-align: center
     user-select: none
+  &-military,
+  &-political,
+  &-strength,
+  &-glory
+    display: none
+    @media screen and ( min-width: 667px)
+      display: table-cell
 
 .cardlist-filtered--crab
   .cardlist-row--crab
@@ -143,6 +156,12 @@
 
 .provinceselector
   display: block
+  &-dismiss
+    button
+      width: 100%
+      line-height: 30px
+      cursor: pointer
+
   &-tabs
     display: grid
     grid-template-columns: repeat(5,1fr)

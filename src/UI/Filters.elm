@@ -323,8 +323,6 @@ view model changeMsg =
             label
                 [ classList
                     [ ( "filterblock-item", True )
-
-                    -- , ( "filterblock-item--conflict", cardType == Conflict ) , ( "filterblock-item--dynasty", cardType == Dynasty )
                     , ( "filterblock-item--active", isCardTypeActive model cardType )
                     ]
                 ]

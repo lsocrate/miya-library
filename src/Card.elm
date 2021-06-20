@@ -15,6 +15,11 @@ type Uniqueness
     | NonUnique
 
 
+uniqueTxt : String
+uniqueTxt =
+    "⁕"
+
+
 
 -- ROLES
 
@@ -264,33 +269,43 @@ type alias ConflictCharacterProps =
 
 title : Card -> String
 title card =
+    let
+        x props =
+            props.title
+                ++ (if isUnique card then
+                        " ⁕"
+
+                    else
+                        ""
+                   )
+    in
     case card of
         RoleType (Role props) ->
-            props.title
+            x props
 
         StrongholdType (Stronghold props) ->
-            props.title
+            x props
 
         AttachmentType (Attachment props) ->
-            props.title
+            x props
 
         CharacterType (ConflictCharacter props) ->
-            props.title
+            x props
 
         CharacterType (DynastyCharacter props) ->
-            props.title
+            x props
 
         EventType (ConflictEvent props) ->
-            props.title
+            x props
 
         EventType (DynastyEvent props) ->
-            props.title
+            x props
 
         HoldingType (Holding props) ->
-            props.title
+            x props
 
         ProvinceType (Province props) ->
-            props.title
+            x props
 
 
 clan : Card -> Clan.Clan
