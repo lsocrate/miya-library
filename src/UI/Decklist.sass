@@ -14,22 +14,30 @@
   &-title
     margin: 0
     color: var(--color-strong)
+    font-size: 2em
+    line-height: 1.0
+    font-weight: bold
+
   &-byline
     margin: 0
-  &-synth
-    margin: 0
+    line-height: 1.0
 
-  &-provincelist
-    margin: 0
-    padding: 0
+  &-synth
+    margin: 10px 0 0
+    line-height: 1.0
+    font-size: 1.5em
+
   &-province
     display: block
-  &-influence--ilegal
-    font-weight: bold
-    color: var(--color-strong)
+  &-influence
+    margin: 10px 0 0
+    &--ilegal
+      color: var(--color-strong)
+
   &-influence_entry
     display: inline-block
     margin-left: 0.5em
+
   &-dynasty_deck,
   &-conflict_deck
     grid-row: 3/4
@@ -40,11 +48,41 @@
   &-conflict_deck
     grid-column: 4/7
 
-  &-cardlist
+  &-side_header
     margin: 0
-    padding: 0
-  &-cardrow
-    display: block
+  &-type_header
+    margin: 20px 0 0
+
+.decklist-cardlist
+  margin: 10px 0 0
+  padding: 0
+  display: flex
+  flex-direction: column
+  align-items: flex-start
+
+  &--provinces
+    margin: 20px 0 0
+
+.decklist-cardentry
+  font-size: 1em
+  line-height: 20px
+  display: inline-block
+  position: relative
+  cursor: help
+  .decklist-hoverimage
+    position: absolute
+    z-index: 1
+    top: 1em
+    left: 4em
+    width: 250px
+    display: none
+    img
+      box-shadow: 0 0 4px 2px var(--color-accent--shadow)
+
+  &:hover
+    .decklist-hoverimage
+      display: block
+      animation: fadein 200ms
 
 $clans: crab,crane,dragon,lion,phoenix,scorpion,unicorn
 

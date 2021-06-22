@@ -4,6 +4,7 @@ body
 
   --color-bg: rgb(37, 38, 37)
   --color-accent: rgb(242, 242, 242)
+  --color-accent--shadow: rgba(242, 242, 242, 0.6)
   --color-dark: rgb(73, 115, 80)
   --color-weak: rgb(115, 86, 79)
   --color-strong: rgb(191, 155, 48)
@@ -12,6 +13,7 @@ body
   @media screen and (prefers-color-scheme: light)
     --color-bg: rgb(37, 38, 37)
     --color-accent: rgb(242, 242, 242)
+    --color-accent--shadow: rgba(242, 242, 242, 0.6)
     --color-dark: rgb(73, 115, 80)
     --color-weak: rgb(115, 86, 79)
     --color-strong: rgb(191, 155, 48)
@@ -51,3 +53,9 @@ body
 
 body
   color: var(--color-text)
+
+@keyframes fadein
+  from
+    opacity: 0
+  to
+    opacity: 1

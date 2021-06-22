@@ -40,10 +40,10 @@ view actions { name, author, deck, editingName } =
             influenceData stronghold.clan attachments conflictCharacters conflictEvents
 
         cardBlockDynasty =
-            cardBlock .title (always [])
+            cardBlock (always [])
 
         cardBlockConflict =
-            cardBlock .title
+            cardBlock
                 (\{ influenceCost, clan } ->
                     if clan == deck.stronghold.clan then
                         []
@@ -81,7 +81,7 @@ view actions { name, author, deck, editingName } =
                 )
     in
     div [ class "decklist" ]
-        [ div [ class "decklist-stronghold" ] [ UI.Card.img stronghold ]
+        [ div [ class "decklist-stronghold" ] [ UI.Card.eager stronghold ]
         , section [ class "decklist-header" ]
             [ h1 [ class "decklist-title" ]
                 (case ( editingName, actions ) of
@@ -112,29 +112,36 @@ view actions { name, author, deck, editingName } =
                 , text <| Maybe.withDefault "" <| Maybe.map .title role
                 ]
             , influenceDescription (Deck.maxInfluence deck) influence
-            , ul [ class "decklist-provincelist" ] <| List.map provinceEntries provinces
+            , ul [ class "decklist-cardlist", class "decklist-cardlist--provinces" ] <| List.map provinceEntries provinces
             ]
         , section [ class "decklist-dynasty_deck" ]
-            (h3 []
-                [ text "Dynasty Deck ("
-                , text <| String.fromInt <| sumCards dynastyCharacters + sumCards holdings + sumCards dynastyEvents
-                , text ")"
+            (List.concat
+                [ sideHeader "Dynasty" (sumCards dynastyCharacters + sumCards holdings + sumCards dynastyEvents)
+                , cardBlockDynasty "Characters" dynastyCharacters
+                , cardBlockDynasty "Events" dynastyEvents
+                , cardBlockDynasty "Holdings" holdings
                 ]
-                :: cardBlockDynasty "Characters" dynastyCharacters
-                ++ cardBlockDynasty "Events" dynastyEvents
-                ++ cardBlockDynasty "Holdings" holdings
             )
         , section [ class "decklist-conflict_deck" ]
-            (h3 []
-                [ text "Conflict Deck ("
-                , text <| String.fromInt <| sumCards attachments + sumCards conflictCharacters + sumCards conflictEvents
-                , text ")"
+            (List.concat
+                [ sideHeader "Conflict" (sumCards attachments + sumCards conflictCharacters + sumCards conflictEvents)
+                , cardBlockConflict "Attachments" attachments
+                , cardBlockConflict "Characters" conflictCharacters
+                , cardBlockConflict "Events" conflictEvents
                 ]
-                :: cardBlockConflict "Attachments" attachments
-                ++ cardBlockConflict "Characters" conflictCharacters
-                ++ cardBlockConflict "Events" conflictEvents
             )
         ]
+
+
+sideHeader : String -> Int -> List (Html msg)
+sideHeader sideName cardCount =
+    [ h3 [ class "decklist-side_header" ]
+        [ text sideName
+        , text " Deck ("
+        , text <| String.fromInt cardCount
+        , text ")"
+        ]
+    ]
 
 
 influenceDescription : Int -> List ( Clan, ( Int, Int ) ) -> Html msg
@@ -165,7 +172,12 @@ influenceDescription maxInfluence influence =
                 )
                 influence
     in
-    p [ classList [ ( "decklist-influence--ilegal", spentInfluence > maxInfluence ) ] ]
+    p
+        [ classList
+            [ ( "decklist-influence", True )
+            , ( "decklist-influence--ilegal", spentInfluence > maxInfluence )
+            ]
+        ]
         ([ strong [] [ text "Influence: " ]
          , span []
             [ text <| String.fromInt spentInfluence ]
@@ -184,23 +196,33 @@ influenceDescription maxInfluence influence =
 
 provinceEntries : Card.ProvinceProps -> Html msg
 provinceEntries province =
-    li [ class "decklist-province" ]
-        ([ text province.title, text " " ]
-            ++ (case province.element of
+    let
+        line =
+            List.concat
+                [ [ text province.title ]
+                , case province.element of
                     Card.Single el ->
                         [ UI.Icon.small <| UI.Icon.element el ]
 
                     Card.Double el1 el2 ->
-                        [ UI.Icon.small <| UI.Icon.element el1, UI.Icon.small <| UI.Icon.element el2 ]
+                        [ UI.Icon.small <| UI.Icon.element el1
+                        , UI.Icon.small <| UI.Icon.element el2
+                        ]
 
                     Card.Tomoe ->
                         [ UI.Icon.small UI.Icon.Fiverings ]
-               )
-        )
+                ]
+                |> List.intersperse (text " ")
+    in
+    cardEntry [ class "decklist-province" ] line province
 
 
-cardBlock : (card -> String) -> (card -> List (Html msg)) -> String -> List (DecklistEntry card) -> List (Html msg)
-cardBlock cardTitle cardInfluenceInfo sectionTitle sectionCards =
+type alias AnyCard c =
+    { c | title : String, id : String }
+
+
+cardBlock : (AnyCard c -> List (Html msg)) -> String -> List (DecklistEntry (AnyCard c)) -> List (Html msg)
+cardBlock cardInfluenceInfo sectionTitle sectionCards =
     let
         cardRow ( card, n ) =
             if n < 1 then
@@ -208,21 +230,33 @@ cardBlock cardTitle cardInfluenceInfo sectionTitle sectionCards =
 
             else
                 Just <|
-                    li [ class "decklist-cardrow" ]
-                        ([ text <| String.fromInt n
-                         , text " × "
-                         , text <| cardTitle card
-                         ]
-                            ++ cardInfluenceInfo card
-                        )
+                    cardEntry [] (decksCardLine cardInfluenceInfo card n) card
     in
     if sumCards sectionCards > 0 then
-        [ h4 [] [ text <| sectionTitle ++ " (" ++ String.fromInt (sumCards sectionCards) ++ ")" ]
+        [ h4 [ class "decklist-type_header" ]
+            [ text <| sectionTitle ++ " (" ++ String.fromInt (sumCards sectionCards) ++ ")" ]
         , ul [ class "decklist-cardlist" ] <| List.filterMap cardRow sectionCards
         ]
 
     else
         []
+
+
+cardEntry : List (Attribute msg) -> List (Html msg) -> AnyCard c -> Html msg
+cardEntry attrs line card =
+    li (class "decklist-cardentry" :: attrs)
+        [ div [ class "decklist-cardrow" ] line
+        , div [ class "decklist-hoverimage" ] [ UI.Card.lazy card ]
+        ]
+
+
+decksCardLine : (AnyCard c -> List (Html msg)) -> AnyCard c -> Int -> List (Html msg)
+decksCardLine cardInfluenceInfo card n =
+    [ text <| String.fromInt n
+    , text " × "
+    , text <| card.title
+    ]
+        ++ cardInfluenceInfo card
 
 
 sumCards : List (DecklistEntry a) -> Int
@@ -233,43 +267,40 @@ sumCards =
 influenceData : Clan -> List (DecklistEntry Card.AttachmentProps) -> List (DecklistEntry Card.ConflictCharacterProps) -> List (DecklistEntry Card.ConflictEventProps) -> List ( Clan, ( Int, Int ) )
 influenceData deckClan attachments characters events =
     let
-        addTuples ( xa, xb ) ( ya, yb ) =
-            ( xa + ya, xb + yb )
+        addTuples a b =
+            Tuple.mapBoth ((+) <| Tuple.first a) ((+) <| Tuple.second a) b
+
+        addInfluence qty inf old =
+            Tuple.mapBoth ((+) qty) ((+) (qty * inf)) old
 
         init =
             { crab = ( 0, 0 ), crane = ( 0, 0 ), dragon = ( 0, 0 ), lion = ( 0, 0 ), phoenix = ( 0, 0 ), scorpion = ( 0, 0 ), unicorn = ( 0, 0 ) }
 
         influenceStatsByClan ( card, n ) grouped =
             case ( card.clan, card.influenceCost ) of
-                ( _, Nothing ) ->
+                ( Crab, Just inf ) ->
+                    { grouped | crab = addInfluence n inf grouped.crab }
+
+                ( Crane, Just inf ) ->
+                    { grouped | crane = addInfluence n inf grouped.crane }
+
+                ( Dragon, Just inf ) ->
+                    { grouped | dragon = addInfluence n inf grouped.dragon }
+
+                ( Lion, Just inf ) ->
+                    { grouped | lion = addInfluence n inf grouped.lion }
+
+                ( Phoenix, Just inf ) ->
+                    { grouped | phoenix = addInfluence n inf grouped.phoenix }
+
+                ( Scorpion, Just inf ) ->
+                    { grouped | scorpion = addInfluence n inf grouped.scorpion }
+
+                ( Unicorn, Just inf ) ->
+                    { grouped | unicorn = addInfluence n inf grouped.unicorn }
+
+                ( _, _ ) ->
                     grouped
-
-                ( Neutral, _ ) ->
-                    grouped
-
-                ( Shadowlands, _ ) ->
-                    grouped
-
-                ( Crab, Just influence ) ->
-                    { grouped | crab = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.crab }
-
-                ( Crane, Just influence ) ->
-                    { grouped | crane = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.crane }
-
-                ( Dragon, Just influence ) ->
-                    { grouped | dragon = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.dragon }
-
-                ( Lion, Just influence ) ->
-                    { grouped | lion = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.lion }
-
-                ( Phoenix, Just influence ) ->
-                    { grouped | phoenix = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.phoenix }
-
-                ( Scorpion, Just influence ) ->
-                    { grouped | scorpion = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.scorpion }
-
-                ( Unicorn, Just influence ) ->
-                    { grouped | unicorn = Tuple.mapBoth ((+) n) ((+) (n * influence)) grouped.unicorn }
     in
     [ List.foldl influenceStatsByClan init attachments
     , List.foldl influenceStatsByClan init characters

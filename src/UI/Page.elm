@@ -30,6 +30,7 @@ view currentRoute mainViews =
                     [ img
                         [ src "/assets/logo-header.svg"
                         , title "Miya Library"
+                        , attribute "loading" "eager"
                         ]
                         []
                     ]

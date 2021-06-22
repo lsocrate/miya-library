@@ -43,11 +43,8 @@ type Model
 
 init : ( Model, Cmd Msg )
 init =
-    ( ChoosingStronghold Nothing, Cmd.none )
-
-
-
--- ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
+    -- ( ChoosingStronghold Nothing, Cmd.none )
+    ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
 
 
 type alias DeckCards =
@@ -306,7 +303,7 @@ viewProvinceLine deck displayEl card =
                         [ class "provinceselector-province"
                         , onClick <| ToggleProvince prov
                         ]
-                        [ UI.Card.img prov ]
+                        [ UI.Card.lazy prov ]
             )
 
 
@@ -355,7 +352,7 @@ viewStrongholdSelector strongholds =
                             [ class "strongholdpicker-item"
                             , onClick <| SelectedStronghold sh
                             ]
-                            [ UI.Card.img sh
+                            [ UI.Card.lazy sh
                             ]
                     )
             )

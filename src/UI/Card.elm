@@ -1,18 +1,34 @@
-module UI.Card exposing (img)
+module UI.Card exposing (eager, lazy)
 
-import Html
+import Html exposing (Attribute, Html, div, img)
 import Html.Attributes exposing (attribute, class, src, title)
 
 
-img : { a | title : String, id : String } -> Html.Html msg
-img provProps =
-    Html.img
-        [ class "cardimage"
-        , title provProps.title
-        , src <| cardSrc provProps.id
-        , attribute "loading" "lazy"
+type alias Image card =
+    { card | title : String, id : String }
+
+
+lazy : Image card -> Html msg
+lazy =
+    common (attribute "loading" "lazy")
+
+
+eager : Image card -> Html msg
+eager =
+    common (attribute "loading" "eager")
+
+
+common : Attribute msg -> Image card -> Html msg
+common loading provProps =
+    div [ class "cardimage" ]
+        [ img
+            [ class "cardimage"
+            , title provProps.title
+            , src <| cardSrc provProps.id
+            , loading
+            ]
+            []
         ]
-        []
 
 
 cardSrc : String -> String
