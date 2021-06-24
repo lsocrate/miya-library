@@ -1,4 +1,4 @@
-module Clan exposing (Clan(..), comparable)
+module Clan exposing (Clan(..), comparable, toString)
 
 
 type Clan
@@ -42,3 +42,34 @@ comparable clan =
 
         Shadowlands ->
             9
+
+
+toString : Clan -> String
+toString clan =
+    case clan of
+        Crab ->
+            "crab"
+
+        Crane ->
+            "crane"
+
+        Dragon ->
+            "dragon"
+
+        Lion ->
+            "lion"
+
+        Phoenix ->
+            "phoenix"
+
+        Scorpion ->
+            "scorpion"
+
+        Unicorn ->
+            "unicorn"
+
+        Neutral ->
+            "neutral"
+
+        Shadowlands ->
+            "shadowlands"

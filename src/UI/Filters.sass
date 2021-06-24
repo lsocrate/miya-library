@@ -1,42 +1,53 @@
-$clans: crab,crane,dragon,lion,phoenix,scorpion,unicorn,neutral,shadowlands,dynasty,conflict
-
-@each $clan in $clans
-  .filterblock-item--#{$clan}
-    color: var(--color-#{$clan})
-
-    &.filterblock-item--active
-      background: var(--color-#{$clan})
-      color: var(--color-text)
-
-.filterblock
+.fltrblk
   $iconSize: 30px
-  margin: 0
-  padding: 0
-  &--clans
-    flex: 0 0 360px
-  &--backs
-    flex: 0 0 80px
-  &--types
-    flex: 0 0 160px
+
+  margin: 0 -10px
+  &-group
+    margin: 0 10px
+    height: 30px
+
+    &--clans
+      flex: 0 0 360px
+
+    &--backs
+      flex: 0 0 80px
+
+    &--types
+      flex: 0 0 160px
 
   &-item
     display: inline-block
     height: $iconSize
     width: $iconSize
     padding: 5px
-    background: var(--color-text)
     box-shadow: inset 0 0 2px var(--color-bg)
     cursor: pointer
     text-align: center
-    &--type
-      color: var(--color-bg)
-      &.filterblock-item--active
-        background: var(--color-bg)
-        color: var(--color-text)
+
+    input
+      display: none
 
   &-icon
     height: $iconSize
     width: $iconSize
 
-  input
-    display: none
+$filters: crab,crane,dragon,lion,phoenix,scorpion,unicorn,neutral,shadowlands,dynasty,conflict
+
+@each $filter in $filters
+  .fltrblk-item--#{$filter}
+    color: var(--color-#{$filter})
+    background: var(--color-text)
+
+    &:hover,
+    &.fltrblk-item--active
+      background: var(--color-#{$filter})
+      color: var(--color-text)
+
+.fltrblk-item--cardtype
+  color: var(--color-bg)
+  background: var(--color-text)
+
+  &:hover,
+  &.fltrblk-item--active
+    background: var(--color-bg)
+    color: var(--color-text)

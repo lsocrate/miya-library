@@ -1,7 +1,9 @@
+@use "sass:math"
+
 .cardimage
   $cardHeight: 419px
   $cardWidth: 300px
-  $aspectRatio: $cardHeight/$cardWidth * 100%
+  $aspectRatio: math.div($cardHeight, $cardWidth) * 100%
 
   max-width: $cardWidth
   max-height: $cardHeight

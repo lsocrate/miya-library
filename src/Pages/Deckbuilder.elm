@@ -68,7 +68,7 @@ type ProvinceSelector
 
 type Msg
     = SelectedStronghold Card.StrongholdProps
-    | ChangedFilters UI.Filters.Model
+    | FilterChanged UI.Filters.Msg
     | ChangedDecklist ( Card.Card, Int )
     | StartUpdateName
     | UpdateName String
@@ -132,8 +132,8 @@ update _ msg model =
             in
             ( Deckbuilding newDeck filters ps, Cmd.none )
 
-        ( Deckbuilding deck _ ps, ChangedFilters newFilters ) ->
-            ( Deckbuilding deck newFilters ps, Cmd.none )
+        ( Deckbuilding deck oldFilters ps, FilterChanged subMsg ) ->
+            ( Deckbuilding deck (UI.Filters.update subMsg oldFilters) ps, Cmd.none )
 
         ( Deckbuilding oldDeck filters ps, ChangedDecklist ( card, qty ) ) ->
             let
@@ -376,7 +376,7 @@ viewFilters filters =
     Just
         (div [ class "filters" ]
             [ p [] [ text "Filters" ]
-            , div [ class "filters-row" ] (UI.Filters.view filters ChangedFilters)
+            , UI.Filters.view [ class "filters-row" ] FilterChanged filters
             ]
         )
 
@@ -504,21 +504,21 @@ viewCardsOptions cards deck filters =
                     ]
                 , tbody
                     [ classList
-                        [ ( "cardlist-filtered--crab", UI.Filters.isClanFilteredOut filters Crab )
-                        , ( "cardlist-filtered--crane", UI.Filters.isClanFilteredOut filters Crane )
-                        , ( "cardlist-filtered--dragon", UI.Filters.isClanFilteredOut filters Dragon )
-                        , ( "cardlist-filtered--lion", UI.Filters.isClanFilteredOut filters Lion )
-                        , ( "cardlist-filtered--phoenix", UI.Filters.isClanFilteredOut filters Phoenix )
-                        , ( "cardlist-filtered--scorpion", UI.Filters.isClanFilteredOut filters Scorpion )
-                        , ( "cardlist-filtered--unicorn", UI.Filters.isClanFilteredOut filters Unicorn )
-                        , ( "cardlist-filtered--neutral", UI.Filters.isClanFilteredOut filters Neutral )
-                        , ( "cardlist-filtered--shadowlands", UI.Filters.isClanFilteredOut filters Shadowlands )
-                        , ( "cardlist-filtered--conflict", UI.Filters.isConflictFilteredOut filters )
-                        , ( "cardlist-filtered--dynasty", UI.Filters.isDynastyFilteredOut filters )
-                        , ( "cardlist-filtered--character", UI.Filters.isCharacterFilteredOut filters )
-                        , ( "cardlist-filtered--attachment", UI.Filters.isAttachmentFilteredOut filters )
-                        , ( "cardlist-filtered--event", UI.Filters.isEventFilteredOut filters )
-                        , ( "cardlist-filtered--holding", UI.Filters.isHoldingFilteredOut filters )
+                        [ ( "cardlist-filtered--crab", UI.Filters.isClanOut filters Crab )
+                        , ( "cardlist-filtered--crane", UI.Filters.isClanOut filters Crane )
+                        , ( "cardlist-filtered--dragon", UI.Filters.isClanOut filters Dragon )
+                        , ( "cardlist-filtered--lion", UI.Filters.isClanOut filters Lion )
+                        , ( "cardlist-filtered--phoenix", UI.Filters.isClanOut filters Phoenix )
+                        , ( "cardlist-filtered--scorpion", UI.Filters.isClanOut filters Scorpion )
+                        , ( "cardlist-filtered--unicorn", UI.Filters.isClanOut filters Unicorn )
+                        , ( "cardlist-filtered--neutral", UI.Filters.isClanOut filters Neutral )
+                        , ( "cardlist-filtered--shadowlands", UI.Filters.isClanOut filters Shadowlands )
+                        , ( "cardlist-filtered--conflict", UI.Filters.isCardBackOut filters UI.Filters.Conflict )
+                        , ( "cardlist-filtered--dynasty", UI.Filters.isCardBackOut filters UI.Filters.Dynasty )
+                        , ( "cardlist-filtered--character", UI.Filters.isCardTypeOut filters UI.Filters.Character )
+                        , ( "cardlist-filtered--attachment", UI.Filters.isCardTypeOut filters UI.Filters.Attachment )
+                        , ( "cardlist-filtered--event", UI.Filters.isCardTypeOut filters UI.Filters.Event )
+                        , ( "cardlist-filtered--holding", UI.Filters.isCardTypeOut filters UI.Filters.Holding )
                         ]
                     ]
                     (Dict.values cards
