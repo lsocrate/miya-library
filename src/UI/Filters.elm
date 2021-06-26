@@ -38,19 +38,6 @@ type CardType
     | Holding
 
 
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        ChangeClan clan val ->
-            { model | byClan = updateFilter model.byClan ( clan, val ) }
-
-        ChangeCardBack cardBack val ->
-            { model | byBack = updateFilter model.byBack ( cardBack, val ) }
-
-        ChangeCardType cardType val ->
-            { model | byCardType = updateFilter model.byCardType ( cardType, val ) }
-
-
 type Msg
     = ChangeClan Clan Bool
     | ChangeCardBack Back Bool
@@ -59,19 +46,6 @@ type Msg
 
 type alias Filter category =
     List ( category, Bool )
-
-
-updateFilter : Filter cat -> ( cat, Bool ) -> Filter cat
-updateFilter oldFilter newOption =
-    let
-        replaceOnMatch oldOption =
-            if Tuple.first oldOption == Tuple.first newOption then
-                newOption
-
-            else
-                oldOption
-    in
-    List.map replaceOnMatch oldFilter
 
 
 noClanFilter : Filter Clan
@@ -104,33 +78,81 @@ noCardTypeFilter =
     ]
 
 
+
+-----------------
+-- INIT
+-----------------
+
+
 init : Model
 init =
     { byClan = noClanFilter, byBack = noBackFilter, byCardType = noCardTypeFilter }
 
 
+
+-----------------
+-- UPDATE
+-----------------
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        ChangeClan clan val ->
+            { model | byClan = updateFilter model.byClan ( clan, val ) }
+
+        ChangeCardBack cardBack val ->
+            { model | byBack = updateFilter model.byBack ( cardBack, val ) }
+
+        ChangeCardType cardType val ->
+            { model | byCardType = updateFilter model.byCardType ( cardType, val ) }
+
+
+updateFilter : Filter cat -> ( cat, Bool ) -> Filter cat
+updateFilter oldFilter newOption =
+    let
+        replaceOnMatch oldOption =
+            if Tuple.first oldOption == Tuple.first newOption then
+                newOption
+
+            else
+                oldOption
+    in
+    List.map replaceOnMatch oldFilter
+
+
+
+-----------------
+-- RESULTS
+-----------------
+
+
 isClanOut : Model -> Clan.Clan -> Bool
-isClanOut { byClan } clan =
-    (byClan /= noClanFilter)
-        && List.member ( clan, True ) byClan
+isClanOut =
+    isCardOut .byClan noClanFilter
 
 
 isCardBackOut : Model -> Back -> Bool
-isCardBackOut { byBack } back =
-    (byBack /= noBackFilter)
-        && not
-            (List.member ( back, True ) byBack)
+isCardBackOut =
+    isCardOut .byBack noBackFilter
 
 
 isCardTypeOut : Model -> CardType -> Bool
-isCardTypeOut { byCardType } cardType =
-    (byCardType /= noCardTypeFilter)
+isCardTypeOut =
+    isCardOut .byCardType noCardTypeFilter
+
+
+isCardOut : (Model -> Filter cat) -> Filter cat -> Model -> cat -> Bool
+isCardOut category emptyFilter model option =
+    (category model /= emptyFilter)
         && not
-            (List.member ( cardType, True ) byCardType)
+            (List.member ( option, True ) (category model))
 
 
 
+-------
 -- VIEW
+-------
 
 
 view : List (Attribute msg) -> (Msg -> msg) -> Model -> Html msg
