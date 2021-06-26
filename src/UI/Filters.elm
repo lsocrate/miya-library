@@ -1,12 +1,14 @@
 module UI.Filters exposing
     ( Back(..)
     , CardType(..)
+    , Extra(..)
     , Model
     , Msg(..)
     , init
     , isCardBackOut
     , isCardTypeOut
     , isClanOut
+    , isExtraOut
     , update
     , view
     )
@@ -23,6 +25,7 @@ type alias Model =
     { byClan : Filter Clan
     , byBack : Filter Back
     , byCardType : Filter CardType
+    , byExtra : Filter Extra
     }
 
 
@@ -38,10 +41,21 @@ type CardType
     | Holding
 
 
+type Extra
+    = Unique
+    | NonUnique
+    | Restricted
+    | Influence1
+    | Influence2
+    | Influence3
+    | Influence4
+
+
 type Msg
     = ChangeClan Clan Bool
     | ChangeCardBack Back Bool
     | ChangeCardType CardType Bool
+    | ChangeExtra Extra Bool
 
 
 type alias Filter category =
@@ -78,6 +92,18 @@ noCardTypeFilter =
     ]
 
 
+noExtraFilter : Filter Extra
+noExtraFilter =
+    [ ( Unique, False )
+    , ( NonUnique, False )
+    , ( Restricted, False )
+    , ( Influence1, False )
+    , ( Influence2, False )
+    , ( Influence3, False )
+    , ( Influence4, False )
+    ]
+
+
 
 -----------------
 -- INIT
@@ -86,7 +112,7 @@ noCardTypeFilter =
 
 init : Model
 init =
-    { byClan = noClanFilter, byBack = noBackFilter, byCardType = noCardTypeFilter }
+    { byClan = noClanFilter, byBack = noBackFilter, byCardType = noCardTypeFilter, byExtra = noExtraFilter }
 
 
 
@@ -106,6 +132,9 @@ update msg model =
 
         ChangeCardType cardType val ->
             { model | byCardType = updateFilter model.byCardType ( cardType, val ) }
+
+        ChangeExtra extra val ->
+            { model | byExtra = updateFilter model.byExtra ( extra, val ) }
 
 
 updateFilter : Filter cat -> ( cat, Bool ) -> Filter cat
@@ -142,6 +171,11 @@ isCardTypeOut =
     isCardOut .byCardType noCardTypeFilter
 
 
+isExtraOut : Model -> Extra -> Bool
+isExtraOut =
+    isCardOut .byExtra noExtraFilter
+
+
 isCardOut : (Model -> Filter cat) -> Filter cat -> Model -> cat -> Bool
 isCardOut category emptyFilter model option =
     (category model /= emptyFilter)
@@ -166,6 +200,7 @@ view_ attrs changeMsg model =
         [ group (class "fltrblk-group--clans") model.byClan (clanToggle changeMsg)
         , group (class "fltrblk-group--backs") model.byBack (cardBackToggle changeMsg)
         , group (class "fltrblk-group--types") model.byCardType (cardTypeToggle changeMsg)
+        , group (class "fltrblk-group--extra") model.byExtra (extraToggle changeMsg)
         ]
 
 
@@ -243,4 +278,38 @@ cardTypeToggle changeMsg =
         handler cardType =
             changeMsg << ChangeCardType cardType
     in
-    genToggle (always "fltrblk-item--cardtype") iconThing handler
+    genToggle (always "fltrblk-item--bland") iconThing handler
+
+
+extraToggle : (Msg -> msg) -> ( Extra, Bool ) -> Html msg
+extraToggle changeMsg =
+    let
+        iconThing extra =
+            Icon.large
+                (case extra of
+                    Unique ->
+                        Icon.Unique
+
+                    NonUnique ->
+                        Icon.NonUnique
+
+                    Restricted ->
+                        Icon.Restricted
+
+                    Influence1 ->
+                        Icon.Influence1
+
+                    Influence2 ->
+                        Icon.Influence2
+
+                    Influence3 ->
+                        Icon.Influence3
+
+                    Influence4 ->
+                        Icon.Influence4
+                )
+
+        handler extra =
+            changeMsg << ChangeExtra extra
+    in
+    genToggle (always "fltrblk-item--bland") iconThing handler

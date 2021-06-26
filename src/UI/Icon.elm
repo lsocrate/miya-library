@@ -1,5 +1,6 @@
 module UI.Icon exposing (Icon(..), clan, element, large, medium, small)
 
+import Card exposing (Uniqueness(..))
 import Clan
 import Element
 import Html exposing (Attribute, Html, i, text)
@@ -42,6 +43,8 @@ type Icon
     | Attachment
     | Event
     | Holding
+    | Restricted
+    | NonUnique
 
 
 clan : Clan.Clan -> Icon
@@ -123,6 +126,12 @@ icon classForSize ico =
 
         Holding ->
             i [ class "material-icons", classForSize ] [ text "home" ]
+
+        Restricted ->
+            i [ class "material-icons", classForSize ] [ text "warning" ]
+
+        NonUnique ->
+            i [ class "material-icons", classForSize ] [ text "trip_origin" ]
 
         _ ->
             i [ class "icon", classForSize, classForIcon ico ] []

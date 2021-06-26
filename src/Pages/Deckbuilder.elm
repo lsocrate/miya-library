@@ -10,6 +10,7 @@ import Gen.Route exposing (Route)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Html.Lazy as Lazy
 import Numerical
 import Page
 import Request
@@ -205,8 +206,8 @@ view shared route model =
                             , aside [ class "deckbuilder-builder" ]
                                 (List.filterMap identity
                                     [ provinceSelector cards deck ps
-                                    , viewFilters filters
-                                    , viewCardsOptions cards deckCards filters
+                                    , Just <| viewFilters filters
+                                    , Just <| viewCardsOptions cards deckCards filters
                                     ]
                                 )
                             ]
@@ -371,47 +372,100 @@ intoDeck cards deckCards =
         |> Deck.fromDecklist cards
 
 
-viewFilters : UI.Filters.Model -> Maybe (Html Msg)
+viewFilters : UI.Filters.Model -> Html Msg
 viewFilters filters =
-    Just
-        (div [ class "filters" ]
-            [ p [] [ text "Filters" ]
-            , UI.Filters.view [ class "filters-row" ] FilterChanged filters
-            ]
-        )
+    div [ class "filters" ]
+        [ p [] [ text "Filters" ]
+        , UI.Filters.view [ class "filters-row" ] FilterChanged filters
+        ]
 
 
-viewCardsOptions : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> Maybe (Html Msg)
+viewCardsOptions : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> Html Msg
 viewCardsOptions cards deck filters =
-    let
-        cardRow card =
-            let
-                copiesInDeck =
-                    Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
+    div [ class "cards" ]
+        [ table [ class "cardlist" ]
+            [ cardListHeader
+            , cardListBody cards filters deck
+            ]
+        ]
 
-                picker =
-                    div [ class "cardlist-picker" ]
-                        (List.range 0 3
-                            |> List.map
-                                (\n ->
-                                    label
-                                        [ classList
-                                            [ ( "cardlist-option", True )
-                                            , ( "cardlist-option--active", n == copiesInDeck )
-                                            ]
-                                        ]
-                                        [ text <| String.fromInt n
-                                        , input
-                                            [ type_ "radio"
-                                            , name <| "count-" ++ Card.title card
-                                            , checked <| n == copiesInDeck
-                                            , onClick <| ChangedDecklist ( card, n )
-                                            ]
-                                            []
-                                        ]
-                                )
-                        )
+
+cardListHeader : Html Msg
+cardListHeader =
+    thead [ class "cardlist-headers" ]
+        [ tr []
+            [ th [ class "cardlist-quantity" ] [ text "Quantity" ]
+            , th [ class "cardlist-clan" ] []
+            , th [ class "cardlist-type" ] []
+            , th [ class "cardlist-title" ] [ text "Title" ]
+            , th [ class "cardlist-influence" ] [ UI.Icon.small UI.Icon.Influence1 ]
+            , th [ class "cardlist-cost" ] [ UI.Icon.small UI.Icon.Fate ]
+            , th [ class "cardlist-military" ] [ UI.Icon.small UI.Icon.Military ]
+            , th [ class "cardlist-political" ] [ UI.Icon.small UI.Icon.Political ]
+            , th [ class "cardlist-glory" ] [ text "G" ]
+            , th [ class "cardlist-strength" ] [ text "S" ]
+            ]
+        ]
+
+
+cardListBody : Dict.Dict String Card.Card -> UI.Filters.Model -> DeckCards -> Html Msg
+cardListBody =
+    let
+        viewcardListBody cards filters deck =
+            let
+                cardRowx card =
+                    let
+                        copiesInDeck =
+                            Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
+                    in
+                    cardRow deck.stronghold.clan card (cardQuantitySelector card copiesInDeck)
             in
+            tbody
+                [ classList
+                    [ ( "cardlist-filtered--crab", UI.Filters.isClanOut filters Crab )
+                    , ( "cardlist-filtered--crane", UI.Filters.isClanOut filters Crane )
+                    , ( "cardlist-filtered--dragon", UI.Filters.isClanOut filters Dragon )
+                    , ( "cardlist-filtered--lion", UI.Filters.isClanOut filters Lion )
+                    , ( "cardlist-filtered--phoenix", UI.Filters.isClanOut filters Phoenix )
+                    , ( "cardlist-filtered--scorpion", UI.Filters.isClanOut filters Scorpion )
+                    , ( "cardlist-filtered--unicorn", UI.Filters.isClanOut filters Unicorn )
+                    , ( "cardlist-filtered--neutral", UI.Filters.isClanOut filters Neutral )
+                    , ( "cardlist-filtered--shadowlands", UI.Filters.isClanOut filters Shadowlands )
+                    , ( "cardlist-filtered--conflict", UI.Filters.isCardBackOut filters UI.Filters.Conflict )
+                    , ( "cardlist-filtered--dynasty", UI.Filters.isCardBackOut filters UI.Filters.Dynasty )
+                    , ( "cardlist-filtered--character", UI.Filters.isCardTypeOut filters UI.Filters.Character )
+                    , ( "cardlist-filtered--attachment", UI.Filters.isCardTypeOut filters UI.Filters.Attachment )
+                    , ( "cardlist-filtered--event", UI.Filters.isCardTypeOut filters UI.Filters.Event )
+                    , ( "cardlist-filtered--holding", UI.Filters.isCardTypeOut filters UI.Filters.Holding )
+                    ]
+                ]
+                (Dict.values cards
+                    |> List.filter
+                        (\card ->
+                            case card of
+                                Card.StrongholdType _ ->
+                                    False
+
+                                Card.RoleType _ ->
+                                    False
+
+                                Card.ProvinceType _ ->
+                                    False
+
+                                _ ->
+                                    Card.isPlayable deck.stronghold.clan deck.role card
+                        )
+                    |> List.sortWith (compositeSort deck)
+                    |> List.map cardRowx
+                )
+    in
+    Lazy.lazy3 viewcardListBody
+
+
+cardRow : Clan -> Card.Card -> Html Msg -> Html Msg
+cardRow =
+    let
+        viewCardRow deckClan card viewCardQuantitySelector =
             tr
                 [ classList
                     [ ( "cardlist-row", True )
@@ -432,7 +486,7 @@ viewCardsOptions cards deck filters =
                     , ( "cardlist-row--holding", Card.isHolding card )
                     ]
                 ]
-                [ td [ class "cardlist-quantity" ] [ picker ]
+                [ td [ class "cardlist-quantity" ] [ viewCardQuantitySelector ]
                 , td [ class "cardlist-clan" ] [ UI.Icon.large <| UI.Icon.clan <| Card.clan card ]
                 , td [ class "cardlist-type" ]
                     (case card of
@@ -453,7 +507,7 @@ viewCardsOptions cards deck filters =
                     )
                 , td [ class "cardlist-title" ] [ text <| Card.title card ]
                 , td [ class "cardlist-influence" ]
-                    (if deck.stronghold.clan == Card.clan card then
+                    (if deckClan == Card.clan card then
                         []
 
                      else
@@ -485,64 +539,36 @@ viewCardsOptions cards deck filters =
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.strength card ]
                 ]
     in
-    Just
-        (div [ class "cards" ]
-            [ table [ class "cardlist" ]
-                [ thead [ class "cardlist-headers" ]
-                    [ tr []
-                        [ th [ class "cardlist-quantity" ] [ text "Quantity" ]
-                        , th [ class "cardlist-clan" ] []
-                        , th [ class "cardlist-type" ] []
-                        , th [ class "cardlist-title" ] [ text "Title" ]
-                        , th [ class "cardlist-influence" ] [ UI.Icon.small UI.Icon.Influence1 ]
-                        , th [ class "cardlist-cost" ] [ UI.Icon.small UI.Icon.Fate ]
-                        , th [ class "cardlist-military" ] [ UI.Icon.small UI.Icon.Military ]
-                        , th [ class "cardlist-political" ] [ UI.Icon.small UI.Icon.Political ]
-                        , th [ class "cardlist-glory" ] [ text "G" ]
-                        , th [ class "cardlist-strength" ] [ text "S" ]
-                        ]
-                    ]
-                , tbody
-                    [ classList
-                        [ ( "cardlist-filtered--crab", UI.Filters.isClanOut filters Crab )
-                        , ( "cardlist-filtered--crane", UI.Filters.isClanOut filters Crane )
-                        , ( "cardlist-filtered--dragon", UI.Filters.isClanOut filters Dragon )
-                        , ( "cardlist-filtered--lion", UI.Filters.isClanOut filters Lion )
-                        , ( "cardlist-filtered--phoenix", UI.Filters.isClanOut filters Phoenix )
-                        , ( "cardlist-filtered--scorpion", UI.Filters.isClanOut filters Scorpion )
-                        , ( "cardlist-filtered--unicorn", UI.Filters.isClanOut filters Unicorn )
-                        , ( "cardlist-filtered--neutral", UI.Filters.isClanOut filters Neutral )
-                        , ( "cardlist-filtered--shadowlands", UI.Filters.isClanOut filters Shadowlands )
-                        , ( "cardlist-filtered--conflict", UI.Filters.isCardBackOut filters UI.Filters.Conflict )
-                        , ( "cardlist-filtered--dynasty", UI.Filters.isCardBackOut filters UI.Filters.Dynasty )
-                        , ( "cardlist-filtered--character", UI.Filters.isCardTypeOut filters UI.Filters.Character )
-                        , ( "cardlist-filtered--attachment", UI.Filters.isCardTypeOut filters UI.Filters.Attachment )
-                        , ( "cardlist-filtered--event", UI.Filters.isCardTypeOut filters UI.Filters.Event )
-                        , ( "cardlist-filtered--holding", UI.Filters.isCardTypeOut filters UI.Filters.Holding )
-                        ]
-                    ]
-                    (Dict.values cards
-                        |> List.filter
-                            (\card ->
-                                case card of
-                                    Card.StrongholdType _ ->
-                                        False
+    Lazy.lazy3 viewCardRow
 
-                                    Card.RoleType _ ->
-                                        False
 
-                                    Card.ProvinceType _ ->
-                                        False
-
-                                    _ ->
-                                        Card.isPlayable deck.stronghold.clan deck.role card
-                            )
-                        |> List.sortWith (compositeSort deck)
-                        |> List.map cardRow
-                    )
-                ]
-            ]
-        )
+cardQuantitySelector : Card.Card -> Int -> Html Msg
+cardQuantitySelector =
+    let
+        viewCardQuantitySelector card copiesInDeck =
+            div [ class "cardlist-picker" ]
+                (List.range 0 3
+                    |> List.map
+                        (\n ->
+                            label
+                                [ classList
+                                    [ ( "cardlist-option", True )
+                                    , ( "cardlist-option--active", n == copiesInDeck )
+                                    ]
+                                ]
+                                [ text <| String.fromInt n
+                                , input
+                                    [ type_ "radio"
+                                    , name <| "count-" ++ Card.title card
+                                    , checked <| n == copiesInDeck
+                                    , onClick <| ChangedDecklist ( card, n )
+                                    ]
+                                    []
+                                ]
+                        )
+                )
+    in
+    Lazy.lazy2 viewCardQuantitySelector
 
 
 compositeSort : DeckCards -> Card.Card -> Card.Card -> Order
