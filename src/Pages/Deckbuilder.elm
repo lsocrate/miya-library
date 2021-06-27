@@ -41,13 +41,16 @@ page shared req =
 
 type Model
     = ChoosingStronghold (Maybe DeckCards)
-    | Deckbuilding DeckCards UI.Filters.Model ProvinceSelector
+    | Deckbuilding DeckCards UI.Filters.Model ProvinceSelectorState
 
 
 init : ( Model, Cmd Msg )
 init =
-    -- ( ChoosingStronghold Nothing, Cmd.none )
-    ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
+    ( ChoosingStronghold Nothing, Cmd.none )
+
+
+
+-- ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
 
 
 type alias DeckCards =
@@ -64,9 +67,9 @@ type DeckName
     | EditingName String (Maybe String)
 
 
-type ProvinceSelector
-    = ProvinceSelectorClosed
-    | ProvinceSelectorOpen Element.Element
+type ProvinceSelectorState
+    = ProvinceSelectorIsClosed
+    | ProvinceSelectorIsOpen Element.Element
 
 
 type Msg
@@ -76,8 +79,8 @@ type Msg
     | StartUpdateName
     | UpdateName String
     | DoneUpdateName String
-    | OpenProvinceSelector Element.Element
-    | CloseProvinceSelector
+    | ProvinceSelectorToggle
+    | ProvinceSelectorChangeElement Element.Element
     | ToggleProvince Card.ProvinceProps
 
 
@@ -95,7 +98,7 @@ update _ msg model =
                             , otherCards = Dict.empty
                             }
             in
-            ( Deckbuilding newDeck UI.Filters.init ProvinceSelectorClosed, Cmd.none )
+            ( Deckbuilding newDeck UI.Filters.init ProvinceSelectorIsClosed, Cmd.none )
 
         ( Deckbuilding deck filters ps, StartUpdateName ) ->
             let
@@ -149,11 +152,14 @@ update _ msg model =
             in
             ( Deckbuilding newDeck filters ps, Cmd.none )
 
-        ( Deckbuilding dc fs (ProvinceSelectorOpen _), OpenProvinceSelector newElement ) ->
-            ( Deckbuilding dc fs (ProvinceSelectorOpen newElement), Cmd.none )
+        ( Deckbuilding dc fs ProvinceSelectorIsClosed, ProvinceSelectorToggle ) ->
+            ( Deckbuilding dc fs (ProvinceSelectorIsOpen Element.Air), Cmd.none )
 
-        ( Deckbuilding dc fs _, CloseProvinceSelector ) ->
-            ( Deckbuilding dc fs ProvinceSelectorClosed, Cmd.none )
+        ( Deckbuilding dc fs (ProvinceSelectorIsOpen _), ProvinceSelectorChangeElement newElement ) ->
+            ( Deckbuilding dc fs (ProvinceSelectorIsOpen newElement), Cmd.none )
+
+        ( Deckbuilding dc fs (ProvinceSelectorIsOpen _), ProvinceSelectorToggle ) ->
+            ( Deckbuilding dc fs ProvinceSelectorIsClosed, Cmd.none )
 
         ( Deckbuilding dc fs ps, ToggleProvince { id } ) ->
             ( Deckbuilding
@@ -206,10 +212,15 @@ view shared route model =
                                 [ decklistModel deckCards deck |> UI.Decklist.view decklistActions
                                 ]
                             , aside [ class "deckbuilder-builder" ]
-                                (List.filterMap identity
-                                    [ provinceSelector cards deck ps
-                                    , Just <| viewFilters filters
-                                    , Just <| viewCardsOptions cards deckCards filters
+                                (List.concat
+                                    [ case ps of
+                                        ProvinceSelectorIsOpen displayEl ->
+                                            [ provinceSelector cards deck displayEl ]
+
+                                        _ ->
+                                            []
+                                    , [ viewFilters filters ]
+                                    , [ viewCardsOptions cards deckCards filters ]
                                     ]
                                 )
                             ]
@@ -217,46 +228,43 @@ view shared route model =
     UI.Page.view route viewsForStep
 
 
-provinceSelector : CardCollection -> Deck.Deck -> ProvinceSelector -> Maybe (Html Msg)
-provinceSelector collection deck ps =
-    case ps of
-        ProvinceSelectorClosed ->
-            Nothing
-
-        ProvinceSelectorOpen displayEl ->
-            Just
-                (div [ class "provinceselector" ]
-                    [ div [ class "provinceselector-dismiss" ]
-                        [ button [ onClick CloseProvinceSelector ]
-                            [ text "Close province selector" ]
-                        ]
-                    , div [ class "provinceselector-tabs" ]
-                        (Element.list
-                            |> List.map
-                                (\el ->
-                                    label
-                                        [ classList
-                                            [ ( "provinceselector-tab", True )
-                                            , ( "provinceselector-tab--active", el == displayEl )
-                                            ]
-                                        ]
-                                        [ text <| Element.name el
-                                        , text " "
-                                        , UI.Icon.small <| UI.Icon.element el
-                                        , input
-                                            [ type_ "radio"
-                                            , name "provinceSelectorTab"
-                                            , checked <| el == displayEl
-                                            , onClick <| OpenProvinceSelector el
-                                            ]
-                                            []
-                                        ]
-                                )
-                        )
-                    , div [ class "provinceselector-provinces" ] <|
-                        List.filterMap (viewProvinceLine deck displayEl) (Dict.values collection)
+provinceSelector : CardCollection -> Deck.Deck -> Element.Element -> Html Msg
+provinceSelector =
+    let
+        viewProvinceSelector collection deck displayEl =
+            div [ class "provinceselector" ]
+                [ div [ class "provinceselector-dismiss" ]
+                    [ button [ onClick ProvinceSelectorToggle ]
+                        [ text "Close province selector" ]
                     ]
-                )
+                , div [ class "provinceselector-tabs" ]
+                    (Element.list
+                        |> List.map
+                            (\el ->
+                                label
+                                    [ class "provinceselector-tab"
+                                    , classList
+                                        [ ( "provinceselector-tab--active", el == displayEl )
+                                        ]
+                                    ]
+                                    [ text <| Element.name el
+                                    , text " "
+                                    , UI.Icon.small <| UI.Icon.element el
+                                    , input
+                                        [ type_ "radio"
+                                        , name "provinceSelectorTab"
+                                        , checked <| el == displayEl
+                                        , onClick <| ProvinceSelectorChangeElement el
+                                        ]
+                                        []
+                                    ]
+                            )
+                    )
+                , div [ class "provinceselector-provinces" ] <|
+                    List.filterMap (viewProvinceLine deck displayEl) (Dict.values collection)
+                ]
+    in
+    Lazy.lazy3 viewProvinceSelector
 
 
 viewProvinceLine : Deck.Deck -> Element.Element -> Card.Card -> Maybe (Html Msg)
@@ -310,12 +318,13 @@ viewProvinceLine deck displayEl card =
             )
 
 
-decklistActions : Maybe { startUpdateName : Msg, updateName : String -> Msg, doneUpdateName : String -> Msg }
+decklistActions : Maybe { startUpdateName : Msg, updateName : String -> Msg, doneUpdateName : String -> Msg, toggleProvinceSelector : Msg }
 decklistActions =
     Just
         { startUpdateName = StartUpdateName
         , updateName = UpdateName
         , doneUpdateName = DoneUpdateName
+        , toggleProvinceSelector = ProvinceSelectorToggle
         }
 
 

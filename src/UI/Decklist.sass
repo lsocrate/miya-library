@@ -1,4 +1,4 @@
-.decklist
+.dcklst
   position: sticky
   top: 0
   display: grid
@@ -53,7 +53,7 @@
   &-type_header
     margin: 20px 0 0
 
-.decklist-cardlist
+.dcklst-cardlist
   margin: 10px 0 0
   padding: 0
   display: flex
@@ -63,13 +63,13 @@
   &--provinces
     margin: 20px 0 0
 
-.decklist-cardentry
+.dcklst-cardentry
   font-size: 1em
   line-height: 20px
   display: inline-block
   position: relative
   cursor: help
-  .decklist-hoverimage
+  .dcklst-hoverimage
     position: absolute
     z-index: 1
     top: 1em
@@ -80,14 +80,14 @@
       box-shadow: 0 0 4px 2px var(--color-accent--shadow)
 
   &:hover
-    .decklist-hoverimage
+    .dcklst-hoverimage
       display: block
       animation: fadein 200ms
 
 $clans: crab,crane,dragon,lion,phoenix,scorpion,unicorn
 
 @each $clan in $clans
-  .decklist-influencemarker--#{$clan}
+  .dcklst-influencemarker--#{$clan}
     color: var(--color-#{$clan}--light)
-  .decklist-influence_entry--#{$clan}
+  .dcklst-influence_entry--#{$clan}
     color: var(--color-#{$clan}--light)

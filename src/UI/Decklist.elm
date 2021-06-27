@@ -28,6 +28,7 @@ type alias Actions msg =
     { startUpdateName : msg
     , updateName : String -> msg
     , doneUpdateName : String -> msg
+    , toggleProvinceSelector : msg
     }
 
 
@@ -51,56 +52,68 @@ view actions { name, author, deck, editingName } =
 
                     else
                         [ span
-                            [ class "decklist-influencemarker"
+                            [ class "dcklst-influencemarker"
                             , classList
-                                [ ( "decklist-influencemarker--crab", clan == Crab )
-                                , ( "decklist-influencemarker--crane", clan == Crane )
-                                , ( "decklist-influencemarker--dragon", clan == Dragon )
-                                , ( "decklist-influencemarker--lion", clan == Lion )
-                                , ( "decklist-influencemarker--phoenix", clan == Phoenix )
-                                , ( "decklist-influencemarker--scorpion", clan == Scorpion )
-                                , ( "decklist-influencemarker--unicorn", clan == Unicorn )
+                                [ ( "dcklst-influencemarker--crab", clan == Crab )
+                                , ( "dcklst-influencemarker--crane", clan == Crane )
+                                , ( "dcklst-influencemarker--dragon", clan == Dragon )
+                                , ( "dcklst-influencemarker--lion", clan == Lion )
+                                , ( "dcklst-influencemarker--phoenix", clan == Phoenix )
+                                , ( "dcklst-influencemarker--scorpion", clan == Scorpion )
+                                , ( "dcklst-influencemarker--unicorn", clan == Unicorn )
                                 ]
                             ]
                             [ text " ", UI.Icon.influence UI.Icon.small influenceCost ]
                         ]
                 )
     in
-    div [ class "decklist" ]
-        [ div [ class "decklist-stronghold" ] [ UI.Card.eager stronghold ]
-        , section [ class "decklist-header" ]
-            [ h1 [ class "decklist-title" ]
-                (case ( editingName, actions ) of
-                    ( False, Nothing ) ->
-                        [ text <| Maybe.withDefault "Unnamed" name ]
+    div [ class "dcklst" ]
+        [ div [ class "dcklst-stronghold" ] [ UI.Card.eager stronghold ]
+        , section [ class "dcklst-header" ]
+            (List.concat
+                [ [ h1 [ class "dcklst-title" ]
+                        (case ( editingName, actions ) of
+                            ( False, Nothing ) ->
+                                [ text <| Maybe.withDefault "Unnamed" name ]
 
-                    ( False, Just { startUpdateName } ) ->
-                        [ text <| Maybe.withDefault "Unnamed" name
-                        , button [ onClick startUpdateName ] [ text "edit" ]
-                        ]
+                            ( False, Just { startUpdateName } ) ->
+                                [ text <| Maybe.withDefault "Unnamed" name
+                                , button [ onClick startUpdateName ] [ text "edit" ]
+                                ]
 
-                    ( True, Just { updateName, doneUpdateName } ) ->
-                        [ input
-                            [ onInput updateName
-                            , value <| Maybe.withDefault "" name
-                            ]
-                            []
-                        , button [ onClick <| doneUpdateName <| Maybe.withDefault "" name ] [ text "save" ]
-                        ]
+                            ( True, Just { updateName, doneUpdateName } ) ->
+                                [ input
+                                    [ onInput updateName
+                                    , value <| Maybe.withDefault "" name
+                                    ]
+                                    []
+                                , button [ onClick <| doneUpdateName <| Maybe.withDefault "" name ] [ text "save" ]
+                                ]
 
-                    _ ->
-                        [ text "" ]
-                )
-            , p [ class "decklist-byline" ] [ text <| "By " ++ author ]
-            , h2 [ class "decklist-synth" ]
-                [ strong [] [ text <| stronghold.title ]
-                , text " - "
-                , text <| Maybe.withDefault "" <| Maybe.map .title role
+                            _ ->
+                                [ text "" ]
+                        )
+                  , p [ class "dcklst-byline" ] [ text <| "By " ++ author ]
+                  , h2 [ class "dcklst-synth" ]
+                        (List.intersperse
+                            (text " - ")
+                            (List.concat
+                                [ [ strong [] [ text stronghold.title ] ]
+                                , role
+                                    |> Maybe.map (\c -> [ text c.title ])
+                                    |> Maybe.withDefault []
+                                ]
+                            )
+                        )
+                  , influenceDescription (Deck.maxInfluence deck) influence
+                  , ul [ class "dcklst-cardlist", class "dcklst-cardlist--provinces" ] <| List.map provinceEntries provinces
+                  ]
+                , actions
+                    |> Maybe.map (\act -> [ button [ onClick act.toggleProvinceSelector ] [ text "Edit provinces" ] ])
+                    |> Maybe.withDefault []
                 ]
-            , influenceDescription (Deck.maxInfluence deck) influence
-            , ul [ class "decklist-cardlist", class "decklist-cardlist--provinces" ] <| List.map provinceEntries provinces
-            ]
-        , section [ class "decklist-dynasty_deck" ]
+            )
+        , section [ class "dcklst-dynasty_deck" ]
             (List.concat
                 [ sideHeader "Dynasty" (sumCards dynastyCharacters + sumCards holdings + sumCards dynastyEvents)
                 , cardBlockDynasty "Characters" dynastyCharacters
@@ -108,7 +121,7 @@ view actions { name, author, deck, editingName } =
                 , cardBlockDynasty "Holdings" holdings
                 ]
             )
-        , section [ class "decklist-conflict_deck" ]
+        , section [ class "dcklst-conflict_deck" ]
             (List.concat
                 [ sideHeader "Conflict" (sumCards attachments + sumCards conflictCharacters + sumCards conflictEvents)
                 , cardBlockConflict "Attachments" attachments
@@ -121,7 +134,7 @@ view actions { name, author, deck, editingName } =
 
 sideHeader : String -> Int -> List (Html msg)
 sideHeader sideName cardCount =
-    [ h3 [ class "decklist-side_header" ]
+    [ h3 [ class "dcklst-side_header" ]
         [ text sideName
         , text " Deck ("
         , text <| String.fromInt cardCount
@@ -141,14 +154,14 @@ influenceDescription maxInfluence influence =
                 (\( clan, ( cardCount, _ ) ) ->
                     span
                         [ classList
-                            [ ( "decklist-influence_entry", True )
-                            , ( "decklist-influence_entry--crab", clan == Crab )
-                            , ( "decklist-influence_entry--crane", clan == Crane )
-                            , ( "decklist-influence_entry--dragon", clan == Dragon )
-                            , ( "decklist-influence_entry--lion", clan == Lion )
-                            , ( "decklist-influence_entry--phoenix", clan == Phoenix )
-                            , ( "decklist-influence_entry--scorpion", clan == Scorpion )
-                            , ( "decklist-influence_entry--unicorn", clan == Unicorn )
+                            [ ( "dcklst-influence_entry", True )
+                            , ( "dcklst-influence_entry--crab", clan == Crab )
+                            , ( "dcklst-influence_entry--crane", clan == Crane )
+                            , ( "dcklst-influence_entry--dragon", clan == Dragon )
+                            , ( "dcklst-influence_entry--lion", clan == Lion )
+                            , ( "dcklst-influence_entry--phoenix", clan == Phoenix )
+                            , ( "dcklst-influence_entry--scorpion", clan == Scorpion )
+                            , ( "dcklst-influence_entry--unicorn", clan == Unicorn )
                             ]
                         ]
                         [ text <| String.fromInt cardCount
@@ -160,8 +173,8 @@ influenceDescription maxInfluence influence =
     in
     p
         [ classList
-            [ ( "decklist-influence", True )
-            , ( "decklist-influence--ilegal", spentInfluence > maxInfluence )
+            [ ( "dcklst-influence", True )
+            , ( "dcklst-influence--ilegal", spentInfluence > maxInfluence )
             ]
         ]
         ([ strong [] [ text "Influence: " ]
@@ -200,7 +213,7 @@ provinceEntries province =
                 ]
                 |> List.intersperse (text " ")
     in
-    cardEntry [ class "decklist-province" ] line province
+    cardEntry [ class "dcklst-province" ] line province
 
 
 type alias AnyCard c =
@@ -219,9 +232,9 @@ cardBlock cardInfluenceInfo sectionTitle sectionCards =
                     cardEntry [] (decksCardLine cardInfluenceInfo card n) card
     in
     if sumCards sectionCards > 0 then
-        [ h4 [ class "decklist-type_header" ]
+        [ h4 [ class "dcklst-type_header" ]
             [ text <| sectionTitle ++ " (" ++ String.fromInt (sumCards sectionCards) ++ ")" ]
-        , ul [ class "decklist-cardlist" ] <| List.filterMap cardRow sectionCards
+        , ul [ class "dcklst-cardlist" ] <| List.filterMap cardRow sectionCards
         ]
 
     else
@@ -230,9 +243,9 @@ cardBlock cardInfluenceInfo sectionTitle sectionCards =
 
 cardEntry : List (Attribute msg) -> List (Html msg) -> AnyCard c -> Html msg
 cardEntry attrs line card =
-    li (class "decklist-cardentry" :: attrs)
-        [ div [ class "decklist-cardrow" ] line
-        , div [ class "decklist-hoverimage" ] [ UI.Card.lazy card ]
+    li (class "dcklst-cardentry" :: attrs)
+        [ div [ class "dcklst-cardrow" ] line
+        , div [ class "dcklst-hoverimage" ] [ UI.Card.lazy card ]
         ]
 
 
