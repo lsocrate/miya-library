@@ -11,6 +11,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
+import Influence
 import Numerical
 import Page
 import Request
@@ -421,23 +422,14 @@ cardListBody =
                     cardRow deck.stronghold.clan card (cardQuantitySelector card copiesInDeck)
             in
             tbody
-                [ classList
-                    [ ( "cardlist-filtered--crab", UI.Filters.isClanOut filters Crab )
-                    , ( "cardlist-filtered--crane", UI.Filters.isClanOut filters Crane )
-                    , ( "cardlist-filtered--dragon", UI.Filters.isClanOut filters Dragon )
-                    , ( "cardlist-filtered--lion", UI.Filters.isClanOut filters Lion )
-                    , ( "cardlist-filtered--phoenix", UI.Filters.isClanOut filters Phoenix )
-                    , ( "cardlist-filtered--scorpion", UI.Filters.isClanOut filters Scorpion )
-                    , ( "cardlist-filtered--unicorn", UI.Filters.isClanOut filters Unicorn )
-                    , ( "cardlist-filtered--neutral", UI.Filters.isClanOut filters Neutral )
-                    , ( "cardlist-filtered--shadowlands", UI.Filters.isClanOut filters Shadowlands )
-                    , ( "cardlist-filtered--conflict", UI.Filters.isCardBackOut filters UI.Filters.Conflict )
-                    , ( "cardlist-filtered--dynasty", UI.Filters.isCardBackOut filters UI.Filters.Dynasty )
-                    , ( "cardlist-filtered--character", UI.Filters.isCardTypeOut filters UI.Filters.Character )
-                    , ( "cardlist-filtered--attachment", UI.Filters.isCardTypeOut filters UI.Filters.Attachment )
-                    , ( "cardlist-filtered--event", UI.Filters.isCardTypeOut filters UI.Filters.Event )
-                    , ( "cardlist-filtered--holding", UI.Filters.isCardTypeOut filters UI.Filters.Holding )
-                    ]
+                [ classList <|
+                    List.concat
+                        [ List.map (\clan -> ( "cardlist-filtered--" ++ Clan.toString clan, True )) (UI.Filters.blockedClans filters)
+                        , List.map (\cardBack -> ( "cardlist-filtered--" ++ Card.cardBackToString cardBack, True )) (UI.Filters.blockedCardBacks filters)
+                        , List.map (\cardType -> ( "cardlist-filtered--" ++ Card.cardTypeToString cardType, True )) (UI.Filters.blockedCardTypes filters)
+                        , List.map (\uniqueness -> ( "cardlist-filtered--" ++ Card.cardUniquenessToString uniqueness, True )) (UI.Filters.blockedUniqueness filters)
+                        , List.map (\influenceCost -> ( "cardlist-filtered--" ++ Influence.toString influenceCost, True )) (UI.Filters.blockedInfluenceCost filters)
+                        ]
                 ]
                 (Dict.values cards
                     |> List.filter
@@ -505,27 +497,24 @@ cardRow =
                         _ ->
                             []
                     )
-                , td [ class "cardlist-title" ] [ text <| Card.title card ]
+                , td [ class "cardlist-title" ]
+                    (List.concat
+                        [ [ text <| Card.title card ]
+                        , if Card.isUnique card then
+                            [ text " "
+                            , UI.Icon.small UI.Icon.Unique
+                            ]
+
+                          else
+                            []
+                        ]
+                    )
                 , td [ class "cardlist-influence" ]
                     (if deckClan == Card.clan card then
                         []
 
                      else
-                        case Card.influence card of
-                            Just 1 ->
-                                [ UI.Icon.medium UI.Icon.Influence1 ]
-
-                            Just 2 ->
-                                [ UI.Icon.medium UI.Icon.Influence2 ]
-
-                            Just 3 ->
-                                [ UI.Icon.medium UI.Icon.Influence3 ]
-
-                            Just 4 ->
-                                [ UI.Icon.medium UI.Icon.Influence4 ]
-
-                            _ ->
-                                []
+                        [ UI.Icon.influence UI.Icon.medium <| Card.influence card ]
                     )
                 , td [ class "cardlist-cost" ]
                     [ text <| Maybe.withDefault "•" <| Maybe.map Numerical.toString <| Card.cost card ]
@@ -576,49 +565,6 @@ compositeSort deck a b =
     let
         selected card =
             Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
-
-        cardType card =
-            case card of
-                Card.AttachmentType _ ->
-                    0
-
-                Card.CharacterType _ ->
-                    1
-
-                Card.EventType _ ->
-                    2
-
-                Card.HoldingType _ ->
-                    3
-
-                Card.ProvinceType _ ->
-                    4
-
-                Card.RoleType _ ->
-                    5
-
-                Card.StrongholdType _ ->
-                    6
-
-        cost card =
-            case Card.cost card of
-                Nothing ->
-                    0
-
-                Just Numerical.Dash ->
-                    1
-
-                Just Numerical.VariableValue ->
-                    2
-
-                Just Numerical.VariableModifier ->
-                    3
-
-                Just (Numerical.FixedValue n) ->
-                    100 + n
-
-                Just (Numerical.FixedModifier n) ->
-                    100 + n
     in
     case compare (selected a) (selected b) of
         GT ->
@@ -628,7 +574,7 @@ compositeSort deck a b =
             GT
 
         EQ ->
-            case compare (cardType a) (cardType b) of
+            case Card.compareType a b of
                 GT ->
                     GT
 
@@ -636,7 +582,7 @@ compositeSort deck a b =
                     LT
 
                 EQ ->
-                    case compare (cost a) (cost b) of
+                    case Card.compareCost a b of
                         GT ->
                             GT
 
@@ -644,4 +590,4 @@ compositeSort deck a b =
                             LT
 
                         EQ ->
-                            EQ
+                            Card.compareTitle a b

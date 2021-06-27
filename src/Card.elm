@@ -3,6 +3,7 @@ module Card exposing (..)
 import Clan exposing (Clan)
 import Element exposing (Element)
 import Format exposing (Format)
+import Influence exposing (InfluenceCost)
 import Numerical exposing (Numerical)
 
 
@@ -18,6 +19,16 @@ type Uniqueness
 uniqueTxt : String
 uniqueTxt =
     "⁕"
+
+
+cardUniquenessToString : Uniqueness -> String
+cardUniquenessToString uniqueness =
+    case uniqueness of
+        Unique ->
+            "unique"
+
+        NonUnique ->
+            "nonunique"
 
 
 
@@ -52,6 +63,60 @@ type Card
     | ProvinceType Province
     | RoleType Role
     | StrongholdType Stronghold
+
+
+type Back
+    = Conflict
+    | Dynasty
+    | Setup
+
+
+cardBackToString : Back -> String
+cardBackToString back =
+    case back of
+        Conflict ->
+            "conflict"
+
+        Dynasty ->
+            "dynasty"
+
+        Setup ->
+            "setup"
+
+
+type CardType
+    = CardTypeAttachment
+    | CardTypeCharacter
+    | CardTypeEvent
+    | CardTypeHolding
+    | CardTypeProvince
+    | CardTypeRole
+    | CardTypeStronghold
+
+
+cardTypeToString : CardType -> String
+cardTypeToString cardType =
+    case cardType of
+        CardTypeAttachment ->
+            "attachment"
+
+        CardTypeCharacter ->
+            "character"
+
+        CardTypeEvent ->
+            "event"
+
+        CardTypeHolding ->
+            "holding"
+
+        CardTypeProvince ->
+            "province"
+
+        CardTypeRole ->
+            "role"
+
+        CardTypeStronghold ->
+            "stronghold"
 
 
 type Stronghold
@@ -175,7 +240,7 @@ type alias ConflictEventProps =
     , traits : List String
     , cost : Numerical
     , abilities : List String
-    , influenceCost : Maybe Int
+    , influenceCost : InfluenceCost
     , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
@@ -212,7 +277,7 @@ type alias AttachmentProps =
     , militarySkillBonus : Numerical
     , politicalSkillBonus : Numerical
     , abilities : List String
-    , influenceCost : Maybe Int
+    , influenceCost : InfluenceCost
     , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
@@ -253,7 +318,7 @@ type alias ConflictCharacterProps =
     , politicalSkill : Numerical
     , glory : Int
     , abilities : List String
-    , influenceCost : Maybe Int
+    , influenceCost : InfluenceCost
     , roleRequirement : Maybe RoleType
     , formatRequirement : Maybe Format
     , image : String
@@ -269,43 +334,33 @@ type alias ConflictCharacterProps =
 
 title : Card -> String
 title card =
-    let
-        x props =
-            props.title
-                ++ (if isUnique card then
-                        " ⁕"
-
-                    else
-                        ""
-                   )
-    in
     case card of
         RoleType (Role props) ->
-            x props
+            props.title
 
         StrongholdType (Stronghold props) ->
-            x props
+            props.title
 
         AttachmentType (Attachment props) ->
-            x props
+            props.title
 
         CharacterType (ConflictCharacter props) ->
-            x props
+            props.title
 
         CharacterType (DynastyCharacter props) ->
-            x props
+            props.title
 
         EventType (ConflictEvent props) ->
-            x props
+            props.title
 
         EventType (DynastyEvent props) ->
-            x props
+            props.title
 
         HoldingType (Holding props) ->
-            x props
+            props.title
 
         ProvinceType (Province props) ->
-            x props
+            props.title
 
 
 clan : Card -> Clan.Clan
@@ -453,7 +508,7 @@ strength card =
             Nothing
 
 
-influence : Card -> Maybe Int
+influence : Card -> InfluenceCost
 influence card =
     case card of
         CharacterType (ConflictCharacter props) ->
@@ -466,7 +521,7 @@ influence card =
             props.influenceCost
 
         _ ->
-            Nothing
+            Influence.None
 
 
 isUnique : Card -> Bool
@@ -550,8 +605,7 @@ isPlayable deckClan role card =
                     List.member req traits
 
         splashable { influenceCost } =
-            Maybe.map (always True) influenceCost
-                |> Maybe.withDefault False
+            influenceCost /= Influence.None
     in
     case card of
         RoleType _ ->
@@ -620,3 +674,69 @@ isHolding card =
 
         _ ->
             False
+
+
+
+--------------
+-- COMPARABLES
+--------------
+
+
+compareType : Card -> Card -> Order
+compareType a b =
+    let
+        byType card =
+            case card of
+                AttachmentType _ ->
+                    0
+
+                CharacterType _ ->
+                    1
+
+                EventType _ ->
+                    2
+
+                HoldingType _ ->
+                    3
+
+                ProvinceType _ ->
+                    4
+
+                RoleType _ ->
+                    5
+
+                StrongholdType _ ->
+                    6
+    in
+    compare (byType a) (byType b)
+
+
+compareCost : Card -> Card -> Order
+compareCost a b =
+    let
+        byCost card =
+            case cost card of
+                Nothing ->
+                    0
+
+                Just Numerical.Dash ->
+                    1
+
+                Just Numerical.VariableValue ->
+                    2
+
+                Just Numerical.VariableModifier ->
+                    3
+
+                Just (Numerical.FixedValue n) ->
+                    100 + n
+
+                Just (Numerical.FixedModifier n) ->
+                    100 + n
+    in
+    compare (byCost a) (byCost b)
+
+
+compareTitle : Card -> Card -> Order
+compareTitle a b =
+    compare (title a) (title b)

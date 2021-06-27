@@ -1,10 +1,11 @@
-module UI.Icon exposing (Icon(..), clan, element, large, medium, small)
+module UI.Icon exposing (Icon(..), clan, element, influence, large, medium, small)
 
 import Card exposing (Uniqueness(..))
 import Clan
 import Element
 import Html exposing (Attribute, Html, i, text)
 import Html.Attributes exposing (class)
+import Influence
 
 
 type Icon
@@ -97,6 +98,25 @@ element el =
             Water
 
 
+influence : (Icon -> Html msg) -> Influence.InfluenceCost -> Html msg
+influence size inf =
+    case inf of
+        Influence.None ->
+            noIcon
+
+        Influence.InfluenceCost1 ->
+            size Influence1
+
+        Influence.InfluenceCost2 ->
+            size Influence2
+
+        Influence.InfluenceCost3 ->
+            size Influence3
+
+        Influence.InfluenceCost4 ->
+            size Influence4
+
+
 small : Icon -> Html msg
 small =
     icon (class "icon--small")
@@ -135,6 +155,11 @@ icon classForSize ico =
 
         _ ->
             i [ class "icon", classForSize, classForIcon ico ] []
+
+
+noIcon : Html msg
+noIcon =
+    i [] []
 
 
 classForIcon : Icon -> Attribute msg

@@ -1,61 +1,48 @@
 module UI.Filters exposing
-    ( Back(..)
-    , CardType(..)
-    , Extra(..)
-    , Model
+    ( Model
     , Msg(..)
+    , blockedCardBacks
+    , blockedCardTypes
+    , blockedClans
+    , blockedInfluenceCost
+    , blockedRestricted
+    , blockedUniqueness
     , init
-    , isCardBackOut
-    , isCardTypeOut
-    , isClanOut
-    , isExtraOut
     , update
     , view
     )
 
+import Card exposing (Back(..), CardType(..), Uniqueness(..))
 import Clan exposing (Clan(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onCheck)
 import Html.Lazy exposing (lazy3)
-import UI.Icon as Icon
+import Influence exposing (InfluenceCost(..))
+import UI.Icon as Icon exposing (Icon)
 
 
 type alias Model =
     { byClan : Filter Clan
     , byBack : Filter Back
     , byCardType : Filter CardType
-    , byExtra : Filter Extra
+    , byUnicity : Filter Uniqueness
+    , byRestricted : Filter Restricted
+    , byInfluenceCost : Filter InfluenceCost
     }
 
 
-type Back
-    = Conflict
-    | Dynasty
-
-
-type CardType
-    = Character
-    | Attachment
-    | Event
-    | Holding
-
-
-type Extra
-    = Unique
-    | NonUnique
-    | Restricted
-    | Influence1
-    | Influence2
-    | Influence3
-    | Influence4
+type Restricted
+    = Restricted
 
 
 type Msg
     = ChangeClan Clan Bool
     | ChangeCardBack Back Bool
     | ChangeCardType CardType Bool
-    | ChangeExtra Extra Bool
+    | ChangeUnicity Uniqueness Bool
+    | ChangeRestricted Restricted Bool
+    | ChangeInfluenceCost InfluenceCost Bool
 
 
 type alias Filter category =
@@ -78,29 +65,38 @@ noClanFilter =
 
 noBackFilter : Filter Back
 noBackFilter =
-    [ ( Dynasty, False )
-    , ( Conflict, False )
+    [ ( Card.Dynasty, False )
+    , ( Card.Conflict, False )
     ]
 
 
 noCardTypeFilter : Filter CardType
 noCardTypeFilter =
-    [ ( Character, False )
-    , ( Attachment, False )
-    , ( Event, False )
-    , ( Holding, False )
+    [ ( CardTypeCharacter, False )
+    , ( CardTypeAttachment, False )
+    , ( CardTypeEvent, False )
+    , ( CardTypeHolding, False )
     ]
 
 
-noExtraFilter : Filter Extra
-noExtraFilter =
+noUnicityFilter : Filter Uniqueness
+noUnicityFilter =
     [ ( Unique, False )
     , ( NonUnique, False )
-    , ( Restricted, False )
-    , ( Influence1, False )
-    , ( Influence2, False )
-    , ( Influence3, False )
-    , ( Influence4, False )
+    ]
+
+
+noRestrictedFilter : Filter Restricted
+noRestrictedFilter =
+    [ ( Restricted, False ) ]
+
+
+noInfluenceCostFilter : Filter InfluenceCost
+noInfluenceCostFilter =
+    [ ( InfluenceCost1, False )
+    , ( InfluenceCost2, False )
+    , ( InfluenceCost3, False )
+    , ( InfluenceCost4, False )
     ]
 
 
@@ -112,7 +108,13 @@ noExtraFilter =
 
 init : Model
 init =
-    { byClan = noClanFilter, byBack = noBackFilter, byCardType = noCardTypeFilter, byExtra = noExtraFilter }
+    { byClan = noClanFilter
+    , byBack = noBackFilter
+    , byCardType = noCardTypeFilter
+    , byUnicity = noUnicityFilter
+    , byRestricted = noRestrictedFilter
+    , byInfluenceCost = noInfluenceCostFilter
+    }
 
 
 
@@ -133,8 +135,14 @@ update msg model =
         ChangeCardType cardType val ->
             { model | byCardType = updateFilter model.byCardType ( cardType, val ) }
 
-        ChangeExtra extra val ->
-            { model | byExtra = updateFilter model.byExtra ( extra, val ) }
+        ChangeUnicity unicity val ->
+            { model | byUnicity = updateFilter model.byUnicity ( unicity, val ) }
+
+        ChangeRestricted restricted val ->
+            { model | byRestricted = updateFilter model.byRestricted ( restricted, val ) }
+
+        ChangeInfluenceCost influenceCost val ->
+            { model | byInfluenceCost = updateFilter model.byInfluenceCost ( influenceCost, val ) }
 
 
 updateFilter : Filter cat -> ( cat, Bool ) -> Filter cat
@@ -156,31 +164,51 @@ updateFilter oldFilter newOption =
 -----------------
 
 
-isClanOut : Model -> Clan.Clan -> Bool
-isClanOut =
-    isCardOut .byClan noClanFilter
+blockedClans : Model -> List Clan
+blockedClans =
+    isBlock .byClan noClanFilter
 
 
-isCardBackOut : Model -> Back -> Bool
-isCardBackOut =
-    isCardOut .byBack noBackFilter
+blockedCardBacks : Model -> List Back
+blockedCardBacks =
+    isBlock .byBack noBackFilter
 
 
-isCardTypeOut : Model -> CardType -> Bool
-isCardTypeOut =
-    isCardOut .byCardType noCardTypeFilter
+blockedCardTypes : Model -> List CardType
+blockedCardTypes =
+    isBlock .byCardType noCardTypeFilter
 
 
-isExtraOut : Model -> Extra -> Bool
-isExtraOut =
-    isCardOut .byExtra noExtraFilter
+blockedUniqueness : Model -> List Uniqueness
+blockedUniqueness =
+    isBlock .byUnicity noUnicityFilter
 
 
-isCardOut : (Model -> Filter cat) -> Filter cat -> Model -> cat -> Bool
-isCardOut category emptyFilter model option =
-    (category model /= emptyFilter)
-        && not
-            (List.member ( option, True ) (category model))
+blockedRestricted : Model -> List Restricted
+blockedRestricted =
+    isBlock .byRestricted noRestrictedFilter
+
+
+blockedInfluenceCost : Model -> List InfluenceCost
+blockedInfluenceCost =
+    isBlock .byInfluenceCost noInfluenceCostFilter
+
+
+isBlock : (Model -> Filter cat) -> Filter cat -> Model -> List cat
+isBlock category emptyFilter model =
+    if category model == emptyFilter then
+        []
+
+    else
+        List.filterMap
+            (\( option, isOn ) ->
+                if isOn then
+                    Nothing
+
+                else
+                    Just option
+            )
+            (category model)
 
 
 
@@ -200,7 +228,9 @@ view_ attrs changeMsg model =
         [ group (class "fltrblk-group--clans") model.byClan (clanToggle changeMsg)
         , group (class "fltrblk-group--backs") model.byBack (cardBackToggle changeMsg)
         , group (class "fltrblk-group--types") model.byCardType (cardTypeToggle changeMsg)
-        , group (class "fltrblk-group--extra") model.byExtra (extraToggle changeMsg)
+        , group (class "fltrblk-group--unicity") model.byUnicity (uniquenessToggle changeMsg)
+        , group (class "fltrblk-group--restricted") model.byRestricted (restrictedToggle changeMsg)
+        , group (class "fltrblk-group--influence") model.byInfluenceCost (influenceToggle changeMsg)
         ]
 
 
@@ -244,11 +274,14 @@ cardBackToggle changeMsg =
     let
         classThing cardBack =
             case cardBack of
-                Conflict ->
+                Card.Conflict ->
                     "fltrblk-item--conflict"
 
-                Dynasty ->
+                Card.Dynasty ->
                     "fltrblk-item--dynasty"
+
+                _ ->
+                    ""
 
         handler cardBack isOn =
             changeMsg <| ChangeCardBack cardBack isOn
@@ -262,17 +295,20 @@ cardTypeToggle changeMsg =
         iconThing cardType =
             Icon.large
                 (case cardType of
-                    Character ->
+                    CardTypeCharacter ->
                         Icon.Character
 
-                    Attachment ->
+                    CardTypeAttachment ->
                         Icon.Attachment
 
-                    Event ->
+                    CardTypeEvent ->
                         Icon.Event
 
-                    Holding ->
+                    CardTypeHolding ->
                         Icon.Holding
+
+                    _ ->
+                        Icon.Unicorn
                 )
 
         handler cardType =
@@ -281,8 +317,8 @@ cardTypeToggle changeMsg =
     genToggle (always "fltrblk-item--bland") iconThing handler
 
 
-extraToggle : (Msg -> msg) -> ( Extra, Bool ) -> Html msg
-extraToggle changeMsg =
+uniquenessToggle : (Msg -> msg) -> ( Uniqueness, Bool ) -> Html msg
+uniquenessToggle changeMsg =
     let
         iconThing extra =
             Icon.large
@@ -292,24 +328,27 @@ extraToggle changeMsg =
 
                     NonUnique ->
                         Icon.NonUnique
-
-                    Restricted ->
-                        Icon.Restricted
-
-                    Influence1 ->
-                        Icon.Influence1
-
-                    Influence2 ->
-                        Icon.Influence2
-
-                    Influence3 ->
-                        Icon.Influence3
-
-                    Influence4 ->
-                        Icon.Influence4
                 )
 
         handler extra =
-            changeMsg << ChangeExtra extra
+            changeMsg << ChangeUnicity extra
     in
     genToggle (always "fltrblk-item--bland") iconThing handler
+
+
+restrictedToggle : (Msg -> msg) -> ( Restricted, Bool ) -> Html msg
+restrictedToggle changeMsg =
+    let
+        handler extra =
+            changeMsg << ChangeRestricted extra
+    in
+    genToggle (always "fltrblk-item--bland") (always <| Icon.large Icon.Restricted) handler
+
+
+influenceToggle : (Msg -> msg) -> ( InfluenceCost, Bool ) -> Html msg
+influenceToggle changeMsg =
+    let
+        handler influenceCost =
+            changeMsg << ChangeInfluenceCost influenceCost
+    in
+    genToggle (always "fltrblk-item--bland") (Icon.influence Icon.large) handler

@@ -6,6 +6,7 @@ import Deck exposing (Deck)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Influence
 import Tuple
 import UI.Card
 import UI.Icon
@@ -50,9 +51,9 @@ view actions { name, author, deck, editingName } =
 
                     else
                         [ span
-                            [ classList
-                                [ ( "decklist-influencemarker", True )
-                                , ( "decklist-influencemarker--crab", clan == Crab )
+                            [ class "decklist-influencemarker"
+                            , classList
+                                [ ( "decklist-influencemarker--crab", clan == Crab )
                                 , ( "decklist-influencemarker--crane", clan == Crane )
                                 , ( "decklist-influencemarker--dragon", clan == Dragon )
                                 , ( "decklist-influencemarker--lion", clan == Lion )
@@ -61,22 +62,7 @@ view actions { name, author, deck, editingName } =
                                 , ( "decklist-influencemarker--unicorn", clan == Unicorn )
                                 ]
                             ]
-                            (case influenceCost of
-                                Just 1 ->
-                                    [ text " ", UI.Icon.small UI.Icon.Influence1 ]
-
-                                Just 2 ->
-                                    [ text " ", UI.Icon.small UI.Icon.Influence2 ]
-
-                                Just 3 ->
-                                    [ text " ", UI.Icon.small UI.Icon.Influence3 ]
-
-                                Just 4 ->
-                                    [ text " ", UI.Icon.small UI.Icon.Influence4 ]
-
-                                _ ->
-                                    []
-                            )
+                            [ text " ", UI.Icon.influence UI.Icon.small influenceCost ]
                         ]
                 )
     in
@@ -278,26 +264,26 @@ influenceData deckClan attachments characters events =
 
         influenceStatsByClan ( card, n ) grouped =
             case ( card.clan, card.influenceCost ) of
-                ( Crab, Just inf ) ->
-                    { grouped | crab = addInfluence n inf grouped.crab }
+                ( Crab, inf ) ->
+                    { grouped | crab = addInfluence n (Influence.toInt inf) grouped.crab }
 
-                ( Crane, Just inf ) ->
-                    { grouped | crane = addInfluence n inf grouped.crane }
+                ( Crane, inf ) ->
+                    { grouped | crane = addInfluence n (Influence.toInt inf) grouped.crane }
 
-                ( Dragon, Just inf ) ->
-                    { grouped | dragon = addInfluence n inf grouped.dragon }
+                ( Dragon, inf ) ->
+                    { grouped | dragon = addInfluence n (Influence.toInt inf) grouped.dragon }
 
-                ( Lion, Just inf ) ->
-                    { grouped | lion = addInfluence n inf grouped.lion }
+                ( Lion, inf ) ->
+                    { grouped | lion = addInfluence n (Influence.toInt inf) grouped.lion }
 
-                ( Phoenix, Just inf ) ->
-                    { grouped | phoenix = addInfluence n inf grouped.phoenix }
+                ( Phoenix, inf ) ->
+                    { grouped | phoenix = addInfluence n (Influence.toInt inf) grouped.phoenix }
 
-                ( Scorpion, Just inf ) ->
-                    { grouped | scorpion = addInfluence n inf grouped.scorpion }
+                ( Scorpion, inf ) ->
+                    { grouped | scorpion = addInfluence n (Influence.toInt inf) grouped.scorpion }
 
-                ( Unicorn, Just inf ) ->
-                    { grouped | unicorn = addInfluence n inf grouped.unicorn }
+                ( Unicorn, inf ) ->
+                    { grouped | unicorn = addInfluence n (Influence.toInt inf) grouped.unicorn }
 
                 ( _, _ ) ->
                     grouped

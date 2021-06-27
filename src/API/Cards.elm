@@ -6,7 +6,8 @@ import Dict
 import Element
 import Format
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, int, list, map, maybe, string)
+import Influence
+import Json.Decode as Decode exposing (Decoder, bool, int, list, map, string)
 import Json.Decode.Pipeline exposing (optional, required)
 import List
 import Numerical
@@ -340,9 +341,30 @@ cost =
     optional "cost" (string |> Decode.andThen toNumericalValue) Numerical.Dash
 
 
-influenceCost : Decoder (Maybe Int -> b) -> Decoder b
+influenceCost : Decoder (Influence.InfluenceCost -> b) -> Decoder b
 influenceCost =
-    optional "influence_cost" (maybe int) Nothing
+    optional "influence_cost"
+        (map
+            (\n ->
+                case n of
+                    1 ->
+                        Influence.InfluenceCost1
+
+                    2 ->
+                        Influence.InfluenceCost2
+
+                    3 ->
+                        Influence.InfluenceCost3
+
+                    4 ->
+                        Influence.InfluenceCost4
+
+                    _ ->
+                        Influence.None
+            )
+            int
+        )
+        Influence.None
 
 
 roleRequirement : Decoder (Maybe Card.RoleType -> b) -> Decoder b
