@@ -321,7 +321,7 @@ uniquenessToggle : (Msg -> msg) -> ( Uniqueness, Bool ) -> Html msg
 uniquenessToggle changeMsg =
     let
         iconThing extra =
-            Icon.large
+            Icon.medium
                 (case extra of
                     Unique ->
                         Icon.Unique
@@ -342,7 +342,7 @@ restrictedToggle changeMsg =
         handler extra =
             changeMsg << ChangeRestricted extra
     in
-    genToggle (always "fltrblk-item--bland") (always <| Icon.large Icon.Restricted) handler
+    genToggle (always "fltrblk-item--bland") (always <| Icon.medium Icon.Restricted) handler
 
 
 influenceToggle : (Msg -> msg) -> ( InfluenceCost, Bool ) -> Html msg
@@ -351,4 +351,4 @@ influenceToggle changeMsg =
         handler influenceCost =
             changeMsg << ChangeInfluenceCost influenceCost
     in
-    genToggle (always "fltrblk-item--bland") (Icon.influence Icon.large) handler
+    genToggle (always "fltrblk-item--bland") (Icon.influence Icon.medium) handler

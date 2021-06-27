@@ -1,9 +1,10 @@
 .fltrblk
   $iconSize: 30px
-
-  margin: 0 -10px
+  user-select: none
+  margin: 0 -5px
   &-group
-    margin: 0 10px
+    margin: 5px
+    display: flex
 
     &--clans
       flex: 0 0 360px
@@ -27,8 +28,11 @@
       display: none
 
   &-icon
-    height: $iconSize
-    width: $iconSize
+    height: 100%
+    width: 100%
+    display: flex
+    justify-content: center
+    align-items: center
 
 $filters: crab,crane,dragon,lion,phoenix,scorpion,unicorn,neutral,shadowlands,dynasty,conflict
 

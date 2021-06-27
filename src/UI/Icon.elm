@@ -1,4 +1,4 @@
-module UI.Icon exposing (Icon(..), clan, element, influence, large, medium, small)
+module UI.Icon exposing (Icon(..), clan, copy, element, influence, large, medium, small)
 
 import Clan
 import Element
@@ -115,6 +115,11 @@ influence size inf =
 
         Influence.InfluenceCost4 ->
             size Influence4
+
+
+copy : Icon -> Html msg
+copy =
+    icon (class "icon--text")
 
 
 small : Icon -> Html msg

@@ -493,7 +493,7 @@ cardRow =
                         [ [ text <| Card.title card ]
                         , if Card.isUnique card then
                             [ text " "
-                            , UI.Icon.small UI.Icon.Unique
+                            , UI.Icon.copy UI.Icon.Unique
                             ]
 
                           else
