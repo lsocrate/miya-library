@@ -5,30 +5,7 @@ import Element exposing (Element)
 import Format exposing (Format)
 import Influence exposing (InfluenceCost)
 import Numerical exposing (Numerical)
-
-
-
--- UNIQUE
-
-
-type Uniqueness
-    = Unique
-    | NonUnique
-
-
-uniqueTxt : String
-uniqueTxt =
-    "⁕"
-
-
-cardUniquenessToString : Uniqueness -> String
-cardUniquenessToString uniqueness =
-    case uniqueness of
-        Unique ->
-            "unique"
-
-        NonUnique ->
-            "nonunique"
+import Uniqueness exposing (Uniqueness(..))
 
 
 
@@ -65,6 +42,31 @@ type Card
     | StrongholdType Stronghold
 
 
+typeToString : Card -> String
+typeToString card =
+    case card of
+        AttachmentType _ ->
+            "attachment"
+
+        CharacterType _ ->
+            "character"
+
+        EventType _ ->
+            "event"
+
+        HoldingType _ ->
+            "holding"
+
+        ProvinceType _ ->
+            "province"
+
+        RoleType _ ->
+            "role"
+
+        StrongholdType _ ->
+            "stronghold"
+
+
 type Back
     = Conflict
     | Dynasty
@@ -81,6 +83,31 @@ cardBackToString back =
             "dynasty"
 
         Setup ->
+            "setup"
+
+
+backToString : Card -> String
+backToString card =
+    case card of
+        AttachmentType (Attachment _) ->
+            "conflict"
+
+        CharacterType (ConflictCharacter _) ->
+            "conflict"
+
+        EventType (ConflictEvent _) ->
+            "conflict"
+
+        CharacterType (DynastyCharacter _) ->
+            "dynasty"
+
+        EventType (DynastyEvent _) ->
+            "dynasty"
+
+        HoldingType (Holding _) ->
+            "dynasty"
+
+        _ ->
             "setup"
 
 
@@ -394,6 +421,28 @@ clan card =
             props.clan
 
 
+uniqueness : Card -> Uniqueness.Uniqueness
+uniqueness card =
+    case card of
+        AttachmentType (Attachment props) ->
+            props.uniqueness
+
+        CharacterType (ConflictCharacter props) ->
+            props.uniqueness
+
+        CharacterType (DynastyCharacter props) ->
+            props.uniqueness
+
+        HoldingType (Holding props) ->
+            props.uniqueness
+
+        ProvinceType (Province props) ->
+            props.uniqueness
+
+        _ ->
+            Uniqueness.NonUnique
+
+
 id : Card -> String
 id card =
     case card of
@@ -555,38 +604,6 @@ isUnique card =
             False
 
 
-isConflict : Card -> Bool
-isConflict card =
-    case card of
-        AttachmentType (Attachment _) ->
-            True
-
-        CharacterType (ConflictCharacter _) ->
-            True
-
-        EventType (ConflictEvent _) ->
-            True
-
-        _ ->
-            False
-
-
-isDynasty : Card -> Bool
-isDynasty card =
-    case card of
-        CharacterType (DynastyCharacter _) ->
-            True
-
-        EventType (DynastyEvent _) ->
-            True
-
-        HoldingType (Holding _) ->
-            True
-
-        _ ->
-            False
-
-
 isPlayable : Clan -> Maybe RoleProps -> Card -> Bool
 isPlayable deckClan role card =
     let
@@ -634,46 +651,6 @@ isPlayable deckClan role card =
 
         EventType (ConflictEvent props) ->
             allowedByRole props && (allowedByClan props || splashable props)
-
-
-isCharacter : Card -> Bool
-isCharacter card =
-    case card of
-        CharacterType _ ->
-            True
-
-        _ ->
-            False
-
-
-isAttachment : Card -> Bool
-isAttachment card =
-    case card of
-        AttachmentType _ ->
-            True
-
-        _ ->
-            False
-
-
-isEvent : Card -> Bool
-isEvent card =
-    case card of
-        EventType _ ->
-            True
-
-        _ ->
-            False
-
-
-isHolding : Card -> Bool
-isHolding card =
-    case card of
-        HoldingType _ ->
-            True
-
-        _ ->
-            False
 
 
 

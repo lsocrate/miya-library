@@ -12,14 +12,15 @@ module UI.Filters exposing
     , view
     )
 
-import Card exposing (Back(..), CardType(..), Uniqueness(..))
+import Card exposing (Back(..), CardType(..))
 import Clan exposing (Clan(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onCheck)
 import Html.Lazy exposing (lazy3)
 import Influence exposing (InfluenceCost(..))
-import UI.Icon as Icon exposing (Icon)
+import UI.Icon as Icon
+import Uniqueness exposing (Uniqueness(..))
 
 
 type alias Model =

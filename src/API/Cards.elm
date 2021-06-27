@@ -12,6 +12,7 @@ import Json.Decode.Pipeline exposing (optional, required)
 import List
 import Numerical
 import String
+import Uniqueness
 
 
 fetchCards : (Result Http.Error (Dict.Dict String Card.Card) -> msg) -> Cmd msg
@@ -481,15 +482,15 @@ formatRequirement =
     optional "text_canonical" (map (always Nothing) string) Nothing
 
 
-uniqueness : Decoder (Card.Uniqueness -> b) -> Decoder b
+uniqueness : Decoder (Uniqueness.Uniqueness -> b) -> Decoder b
 uniqueness =
     let
         toUnique isUnique =
             if isUnique then
-                Card.Unique
+                Uniqueness.Unique
 
             else
-                Card.NonUnique
+                Uniqueness.NonUnique
     in
     required "unicity" <| map toUnique bool
 

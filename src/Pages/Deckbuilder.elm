@@ -24,6 +24,7 @@ import UI.Filters
 import UI.Icon
 import UI.Loading
 import UI.Page
+import Uniqueness
 import Url exposing (Protocol(..))
 import View exposing (View)
 
@@ -427,7 +428,7 @@ cardListBody =
                         [ List.map (\clan -> ( "cardlist-filtered--" ++ Clan.toString clan, True )) (UI.Filters.blockedClans filters)
                         , List.map (\cardBack -> ( "cardlist-filtered--" ++ Card.cardBackToString cardBack, True )) (UI.Filters.blockedCardBacks filters)
                         , List.map (\cardType -> ( "cardlist-filtered--" ++ Card.cardTypeToString cardType, True )) (UI.Filters.blockedCardTypes filters)
-                        , List.map (\uniqueness -> ( "cardlist-filtered--" ++ Card.cardUniquenessToString uniqueness, True )) (UI.Filters.blockedUniqueness filters)
+                        , List.map (\uniqueness -> ( "cardlist-filtered--" ++ Uniqueness.toString uniqueness, True )) (UI.Filters.blockedUniqueness filters)
                         , List.map (\influenceCost -> ( "cardlist-filtered--" ++ Influence.toString influenceCost, True )) (UI.Filters.blockedInfluenceCost filters)
                         ]
                 ]
@@ -459,23 +460,13 @@ cardRow =
     let
         viewCardRow deckClan card viewCardQuantitySelector =
             tr
-                [ classList
-                    [ ( "cardlist-row", True )
-                    , ( "cardlist-row--crab", Crab == Card.clan card )
-                    , ( "cardlist-row--crane", Crane == Card.clan card )
-                    , ( "cardlist-row--dragon", Dragon == Card.clan card )
-                    , ( "cardlist-row--lion", Lion == Card.clan card )
-                    , ( "cardlist-row--phoenix", Phoenix == Card.clan card )
-                    , ( "cardlist-row--scorpion", Scorpion == Card.clan card )
-                    , ( "cardlist-row--unicorn", Unicorn == Card.clan card )
-                    , ( "cardlist-row--neutral", Neutral == Card.clan card )
-                    , ( "cardlist-row--shadowlands", Shadowlands == Card.clan card )
-                    , ( "cardlist-row--conflict", Card.isConflict card )
-                    , ( "cardlist-row--dynasty", Card.isDynasty card )
-                    , ( "cardlist-row--character", Card.isCharacter card )
-                    , ( "cardlist-row--attachment", Card.isAttachment card )
-                    , ( "cardlist-row--event", Card.isEvent card )
-                    , ( "cardlist-row--holding", Card.isHolding card )
+                [ class "cardlist-row"
+                , class ("cardlist-row--" ++ Clan.toString (Card.clan card))
+                , class ("cardlist-row--" ++ Card.backToString card)
+                , class ("cardlist-row--" ++ Card.typeToString card)
+                , class ("cardlist-row--" ++ Uniqueness.toString (Card.uniqueness card))
+                , classList
+                    [ ( "cardlist-row--" ++ Influence.toString (Card.influence card), deckClan /= Card.clan card )
                     ]
                 ]
                 [ td [ class "cardlist-quantity" ] [ viewCardQuantitySelector ]
@@ -540,10 +531,8 @@ cardQuantitySelector =
                     |> List.map
                         (\n ->
                             label
-                                [ classList
-                                    [ ( "cardlist-option", True )
-                                    , ( "cardlist-option--active", n == copiesInDeck )
-                                    ]
+                                [ class "cardlist-option"
+                                , classList [ ( "cardlist-option--active", n == copiesInDeck ) ]
                                 ]
                                 [ text <| String.fromInt n
                                 , input

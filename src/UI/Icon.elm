@@ -1,11 +1,11 @@
 module UI.Icon exposing (Icon(..), clan, element, influence, large, medium, small)
 
-import Card exposing (Uniqueness(..))
 import Clan
 import Element
 import Html exposing (Attribute, Html, i, text)
 import Html.Attributes exposing (class)
 import Influence
+import Uniqueness exposing (Uniqueness(..))
 
 
 type Icon
