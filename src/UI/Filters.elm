@@ -15,7 +15,7 @@ module UI.Filters exposing
 import Card exposing (Back(..), CardType(..))
 import Clan exposing (Clan(..))
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes as Attr exposing (..)
 import Html.Events exposing (onCheck)
 import Html.Lazy exposing (lazy3)
 import Influence exposing (InfluenceCost(..))
@@ -220,19 +220,18 @@ isBlock category emptyFilter model =
 
 view : List (Attribute msg) -> (Msg -> msg) -> Model -> Html msg
 view =
-    lazy3 view_
-
-
-view_ : List (Attribute msg) -> (Msg -> msg) -> Model -> Html msg
-view_ attrs changeMsg model =
-    div (class "fltrblk" :: attrs)
-        [ group (class "fltrblk-group--clans") model.byClan (clanToggle changeMsg)
-        , group (class "fltrblk-group--backs") model.byBack (cardBackToggle changeMsg)
-        , group (class "fltrblk-group--types") model.byCardType (cardTypeToggle changeMsg)
-        , group (class "fltrblk-group--unicity") model.byUnicity (uniquenessToggle changeMsg)
-        , group (class "fltrblk-group--restricted") model.byRestricted (restrictedToggle changeMsg)
-        , group (class "fltrblk-group--influence") model.byInfluenceCost (influenceToggle changeMsg)
-        ]
+    let
+        viewFilters attrs changeMsg model =
+            div (class "fltrblk" :: attrs)
+                [ group (class "fltrblk-group--clans") model.byClan (clanToggle changeMsg)
+                , group (class "fltrblk-group--backs") model.byBack (cardBackToggle changeMsg)
+                , group (class "fltrblk-group--types") model.byCardType (cardTypeToggle changeMsg)
+                , group (class "fltrblk-group--unicity") model.byUnicity (uniquenessToggle changeMsg)
+                , group (class "fltrblk-group--restricted") model.byRestricted (restrictedToggle changeMsg)
+                , group (class "fltrblk-group--influence") model.byInfluenceCost (influenceToggle changeMsg)
+                ]
+    in
+    lazy3 viewFilters
 
 
 group : Attribute msg -> Filter cat -> (( cat, Bool ) -> Html msg) -> Html msg
