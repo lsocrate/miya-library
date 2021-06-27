@@ -1,4 +1,4 @@
-module Deck exposing (Deck, Decklist, fromDecklist, maxInfluence)
+module Deck exposing (Deck, Decklist, fromDecklist, maxInfluence, toDecklist)
 
 import Card
 import Dict
@@ -20,6 +20,21 @@ type alias Deck =
     , dynastyEvents : List ( Card.DynastyEventProps, Int )
     , conflictEvents : List ( Card.ConflictEventProps, Int )
     }
+
+
+toDecklist : Deck -> Decklist
+toDecklist deck =
+    List.concat
+        [ [ ( deck.stronghold.id, 1 ) ]
+        , Maybe.map (\c -> [ ( c.id, 1 ) ]) deck.role |> Maybe.withDefault []
+        , List.map (\c -> ( c.id, 1 )) deck.provinces
+        , List.map (Tuple.mapFirst .id) deck.attachments
+        , List.map (Tuple.mapFirst .id) deck.holdings
+        , List.map (Tuple.mapFirst .id) deck.dynastyCharacters
+        , List.map (Tuple.mapFirst .id) deck.conflictCharacters
+        , List.map (Tuple.mapFirst .id) deck.dynastyEvents
+        , List.map (Tuple.mapFirst .id) deck.conflictEvents
+        ]
 
 
 fromDecklist : CardCollection -> Decklist -> Maybe Deck
