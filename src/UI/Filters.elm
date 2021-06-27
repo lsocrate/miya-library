@@ -15,7 +15,7 @@ module UI.Filters exposing
 import Card exposing (Back(..), CardType(..))
 import Clan exposing (Clan(..))
 import Html exposing (..)
-import Html.Attributes as Attr exposing (..)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onCheck)
 import Html.Lazy exposing (lazy3)
 import Influence exposing (InfluenceCost(..))
