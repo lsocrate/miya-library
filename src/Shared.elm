@@ -26,7 +26,7 @@ type alias CardCollection =
 
 type Model
     = Loading
-    | Loaded { cards : CardCollection, user : Maybe String }
+    | Loaded { cards : CardCollection, user : String }
     | Error
 
 
@@ -45,7 +45,7 @@ update _ msg model =
         ( FetchedCards result, Loading ) ->
             case result of
                 Ok cards ->
-                    ( Loaded { cards = cards, user = Nothing }, Cmd.none )
+                    ( Loaded { cards = cards, user = "Johnny" }, Cmd.none )
 
                 Err _ ->
                     ( Error, Cmd.none )

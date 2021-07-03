@@ -2,7 +2,7 @@ module UI.Decklist exposing (Model, view)
 
 import Card
 import Clan exposing (Clan(..))
-import Deck exposing (Deck)
+import Deck exposing (DeckCards)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -19,7 +19,7 @@ type alias DecklistEntry c =
 type alias Model =
     { name : Maybe String
     , author : String
-    , deck : Deck
+    , deck : DeckCards
     , editingName : Bool
     }
 

@@ -1,24 +1,24 @@
-module API.DB exposing (Deck, saveDeck)
+module API.DB exposing (DeckDoc, saveDeck)
 
+import Clan exposing (Clan)
 import Deck
-import DeckMeta exposing (DeckMeta)
-import Dict exposing (Dict)
+import Dict
 import Firestore
 import Firestore.Config as Config
 import Firestore.Decode as FSDecode
 import Firestore.Encode as FSEncode
-import Firestore.Types.Reference as Reference
 import Format exposing (Format)
+import Shared exposing (CardCollection)
 import Task
 
 
-type alias Deck =
-    { id : String
-    , authorId : String
-    , format : Maybe Format
-    , name : Maybe String
+type alias DeckDoc =
+    { authorId : String
+    , clan : Clan
     , description : Maybe String
-    , list : Dict String Int
+    , format : Format
+    , list : Deck.Decklist
+    , name : Maybe String
     }
 
 
@@ -33,81 +33,110 @@ type alias Deck =
 --         |> Task.attempt msg
 
 
-saveDeck : (Result Firestore.Error (Firestore.Document Deck) -> msg) -> DeckMeta -> Deck.Deck -> Cmd msg
-saveDeck msg meta decklist =
+saveDeck : (Result Firestore.Error Deck.Deck -> msg) -> CardCollection -> Deck.Deck -> Cmd msg
+saveDeck msg cardCollection deck =
     firestore
         |> Firestore.root
         |> Firestore.collection "decks"
-        |> Firestore.insert decoder (encoder meta decklist)
+        |> Firestore.insert decoder (encoder deck)
+        |> Task.map (wrapUp cardCollection)
+        |> Task.andThen unwrapDeck
         |> Task.attempt msg
 
 
-encoder : DeckMeta -> Deck.Deck -> FSEncode.Encoder
-encoder meta decklist =
+unwrapDeck : Maybe Deck.Deck -> Task.Task Firestore.Error Deck.Deck
+unwrapDeck maybeDeck =
+    case maybeDeck of
+        Nothing ->
+            Task.fail
+                (Firestore.Response
+                    { code = 0
+                    , message = "Oops"
+                    , status = "BadData"
+                    }
+                )
+
+        Just x ->
+            Task.succeed x
+
+
+wrapUp : CardCollection -> Firestore.Document DeckDoc -> Maybe Deck.Deck
+wrapUp cardCollection doc =
+    Deck.fromDecklist cardCollection doc.fields.list
+        |> Maybe.map
+            (\deckCards ->
+                { meta =
+                    { authorId = doc.fields.authorId
+                    , clan = doc.fields.clan
+                    , description = doc.fields.description
+                    , format = doc.fields.format
+                    , id = Just <| Firestore.id doc.name
+                    , name = doc.fields.name
+                    }
+                , cards = deckCards
+                }
+            )
+
+
+encoder : Deck.Deck -> FSEncode.Encoder
+encoder deck =
     FSEncode.document
-        [ ( "authorId", FSEncode.string meta.authorId )
-        , ( "format", FSEncode.string <| Format.toString meta.format )
-        , ( "name", FSEncode.maybe FSEncode.string meta.name )
-        , ( "description", FSEncode.maybe FSEncode.string meta.description )
-        , ( "list", FSEncode.dict FSEncode.int <| Dict.fromList <| Deck.toDecklist decklist )
+        [ ( "authorId", FSEncode.string deck.meta.authorId )
+        , ( "format", FSEncode.string <| Format.toString deck.meta.format )
+        , ( "name", FSEncode.maybe FSEncode.string deck.meta.name )
+        , ( "description", FSEncode.maybe FSEncode.string deck.meta.description )
+        , ( "list", FSEncode.dict FSEncode.int <| Dict.fromList <| Deck.toDecklist deck.cards )
         ]
 
 
-decoder : FSDecode.Decoder Deck
+decoder : FSDecode.Decoder DeckDoc
 decoder =
-    FSDecode.document Deck
-        |> FSDecode.required "id" (FSDecode.map Reference.toString FSDecode.reference)
+    FSDecode.document DeckDoc
         |> FSDecode.required "authorId" FSDecode.string
-        |> FSDecode.required "format" (FSDecode.map Format.fromString FSDecode.string)
-        |> FSDecode.optional "name" (FSDecode.maybe FSDecode.string) Nothing
+        |> FSDecode.required "clan" decodeClan
         |> FSDecode.optional "description" (FSDecode.maybe FSDecode.string) Nothing
-        |> FSDecode.required "list" (FSDecode.dict FSDecode.int)
+        |> FSDecode.required "format" decodeFormat
+        |> FSDecode.required "list" decodeDecklist
+        |> FSDecode.optional "name" (FSDecode.maybe FSDecode.string) Nothing
 
 
+decodeDecklist : FSDecode.Field Deck.Decklist
+decodeDecklist =
+    FSDecode.dict FSDecode.int |> FSDecode.map Dict.toList
 
--- |> FSDecode.required "name" FSDecode.string
--- |> FSDecode.required "description" FSDecode.string
--- |> FSDecode.required "list" FSDecode.string
+
+decodeClan : FSDecode.Field Clan
+decodeClan =
+    FSDecode.string
+        |> FSDecode.andThen
+            (\str ->
+                case Clan.fromString str of
+                    Just clan ->
+                        FSDecode.succeed clan
+
+                    Nothing ->
+                        FSDecode.fail "Unrecognized Clan"
+            )
+
+
+decodeFormat : FSDecode.Field Format
+decodeFormat =
+    FSDecode.string
+        |> FSDecode.andThen
+            (\str ->
+                case Format.fromString str of
+                    Just format ->
+                        FSDecode.succeed format
+
+                    Nothing ->
+                        FSDecode.fail "Unrecognized Format"
+            )
 
 
 firestore : Firestore.Firestore
 firestore =
     Config.new
-        { apiKey = apiKey
-        , project = projectId
+        { apiKey = "AIzaSyCu2fEiCuFiI-bOCFx-J02E6DwziM9HtBg"
+        , project = "miya-library"
         }
-        -- |> Config.withDatabase "your-own-database"
-        -- optional
-        -- |> Config.withAuthorization "your-own-auth-token"
-        -- optional
         |> Firestore.init
-
-
-apiKey : String
-apiKey =
-    "AIzaSyCu2fEiCuFiI-bOCFx-J02E6DwziM9HtBg"
-
-
-authDomain : String
-authDomain =
-    "miya-library.firebaseapp.com"
-
-
-projectId : String
-projectId =
-    "miya-library"
-
-
-storageBucket : String
-storageBucket =
-    "miya-library.appspot.com"
-
-
-messagingSenderId : String
-messagingSenderId =
-    "268759908765"
-
-
-appId : String
-appId =
-    "1:268759908765:web:61d65df9f0948a50832f74"

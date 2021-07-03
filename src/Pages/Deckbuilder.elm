@@ -7,7 +7,6 @@ import Deck
 import Dict
 import Element
 import Firestore
-import Format
 import Gen.Params.Deckbuilder exposing (Params)
 import Gen.Route exposing (Route)
 import Html exposing (..)
@@ -42,8 +41,8 @@ page shared req =
 
 
 type Model
-    = ChoosingStronghold (Maybe DeckCards)
-    | Deckbuilding DeckCards UI.Filters.Model ProvinceSelectorState
+    = ChoosingStronghold (Maybe Deck.Deck)
+    | Deckbuilding Deck.Deck UI.Filters.Model ProvinceSelectorState NameEditor
 
 
 init : ( Model, Cmd Msg )
@@ -52,18 +51,9 @@ init =
     ( ChoosingStronghold Nothing, Task.perform (always <| SelectedStronghold Card.shiroNishiyama) (Task.succeed ()) )
 
 
-type alias DeckCards =
-    { stronghold : Card.StrongholdProps
-    , name : DeckName
-    , role : Maybe Card.RoleProps
-    , otherCards : Dict.Dict String Int
-    }
-
-
-type DeckName
-    = Unnamed
-    | Named String
-    | EditingName String (Maybe String)
+type NameEditor
+    = NotNameEditing
+    | NameEditing String
 
 
 type ProvinceSelectorState
@@ -81,8 +71,7 @@ type Msg
     | ProvinceSelectorToggle
     | ProvinceSelectorChangeElement Element.Element
     | ToggleProvince Card.ProvinceProps
-    | GotDocument (Result Firestore.Error (Firestore.Document API.DB.Deck))
-    | SavedDocument (Result Firestore.Error (Firestore.Document API.DB.Deck))
+    | SavedDocument (Result Firestore.Error Deck.Deck)
     | Save
 
 
@@ -95,138 +84,146 @@ update shared msg model =
         Shared.Loading ->
             ( model, Cmd.none )
 
-        Shared.Loaded { cards } ->
+        Shared.Loaded { cards, user } ->
             case ( model, msg ) of
-                ( ChoosingStronghold oldDeck, SelectedStronghold newStronghold ) ->
-                    let
-                        newDeck =
-                            Maybe.map (\deck -> { deck | stronghold = newStronghold }) oldDeck
-                                |> Maybe.withDefault
-                                    { stronghold = newStronghold
-                                    , name = Unnamed
-                                    , role = Nothing
-                                    , otherCards = Dict.empty
-                                    }
-                    in
-                    ( Deckbuilding newDeck UI.Filters.init ProvinceSelectorIsClosed, Cmd.none )
-
-                ( Deckbuilding deck filters ps, StartUpdateName ) ->
-                    let
-                        oldName =
-                            case deck.name of
-                                Named name ->
-                                    Just name
-
-                                _ ->
-                                    Nothing
-                    in
-                    ( Deckbuilding { deck | name = EditingName "" oldName } filters ps, Cmd.none )
-
-                ( Deckbuilding deck filters ps, UpdateName newName ) ->
-                    let
-                        oldName =
-                            case deck.name of
-                                Named name ->
-                                    Just name
-
-                                _ ->
-                                    Nothing
-                    in
-                    ( Deckbuilding { deck | name = EditingName newName oldName } filters ps, Cmd.none )
-
-                ( Deckbuilding oldDeck filters ps, DoneUpdateName newName ) ->
-                    let
-                        newDeck =
-                            { oldDeck
-                                | name =
-                                    if String.isEmpty newName then
-                                        Unnamed
-
-                                    else
-                                        Named newName
-                            }
-                    in
-                    ( Deckbuilding newDeck filters ps, Cmd.none )
-
-                ( Deckbuilding deck oldFilters ps, FilterChanged subMsg ) ->
-                    ( Deckbuilding deck (UI.Filters.update subMsg oldFilters) ps, Cmd.none )
-
-                ( Deckbuilding oldDeck filters ps, ChangedDecklist ( card, qty ) ) ->
-                    let
-                        newDeck =
-                            if qty == 0 then
-                                { oldDeck | otherCards = Dict.remove (Card.id card) oldDeck.otherCards }
-
-                            else
-                                { oldDeck | otherCards = Dict.insert (Card.id card) qty oldDeck.otherCards }
-                    in
-                    ( Deckbuilding newDeck filters ps, Cmd.none )
-
-                ( Deckbuilding dc fs ProvinceSelectorIsClosed, ProvinceSelectorToggle ) ->
-                    ( Deckbuilding dc fs (ProvinceSelectorIsOpen Element.Air), Cmd.none )
-
-                ( Deckbuilding dc fs (ProvinceSelectorIsOpen _), ProvinceSelectorChangeElement newElement ) ->
-                    ( Deckbuilding dc fs (ProvinceSelectorIsOpen newElement), Cmd.none )
-
-                ( Deckbuilding dc fs (ProvinceSelectorIsOpen _), ProvinceSelectorToggle ) ->
-                    ( Deckbuilding dc fs ProvinceSelectorIsClosed, Cmd.none )
-
-                ( Deckbuilding dc fs ps, ToggleProvince { id } ) ->
+                ( ChoosingStronghold Nothing, SelectedStronghold newStronghold ) ->
                     ( Deckbuilding
-                        { dc
-                            | otherCards =
-                                if Dict.member id dc.otherCards then
-                                    Dict.remove id dc.otherCards
-
-                                else
-                                    Dict.insert id 1 dc.otherCards
+                        { meta = Deck.initMeta user newStronghold.clan
+                        , cards = Deck.initDeckCards newStronghold
                         }
-                        fs
-                        ps
+                        UI.Filters.init
+                        ProvinceSelectorIsClosed
+                        NotNameEditing
                     , Cmd.none
                     )
 
-                ( Deckbuilding dc _ _, Save ) ->
-                    intoDeck cards dc
-                        |> Maybe.map
-                            (\d ->
-                                ( model
-                                , API.DB.saveDeck
-                                    SavedDocument
-                                    { id = "ididid"
-                                    , authorId = "Johnny"
-                                    , format = Format.default
-                                    , name =
-                                        case dc.name of
-                                            Named name ->
-                                                Just name
+                ( ChoosingStronghold (Just oldDeck), SelectedStronghold newStronghold ) ->
+                    let
+                        oldCards =
+                            oldDeck.cards
 
-                                            _ ->
-                                                Nothing
-                                    , description = Just "Some description"
+                        newDeck =
+                            { oldDeck | cards = { oldCards | stronghold = newStronghold } }
+                    in
+                    ( Deckbuilding newDeck UI.Filters.init ProvinceSelectorIsClosed NotNameEditing, Cmd.none )
+
+                ( Deckbuilding deck f p _, StartUpdateName ) ->
+                    ( Deckbuilding deck f p (NameEditing <| Maybe.withDefault "" deck.meta.name), Cmd.none )
+
+                ( Deckbuilding d f p (NameEditing _), UpdateName newName ) ->
+                    ( Deckbuilding d f p (NameEditing newName), Cmd.none )
+
+                ( Deckbuilding oldDeck f p _, DoneUpdateName newName ) ->
+                    let
+                        oldMeta =
+                            oldDeck.meta
+
+                        newMeta =
+                            { oldMeta | name = Just newName }
+
+                        newDeck =
+                            { oldDeck | meta = newMeta }
+                    in
+                    ( Deckbuilding newDeck f p NotNameEditing, Cmd.none )
+
+                ( Deckbuilding d oldFilters p n, FilterChanged subMsg ) ->
+                    ( Deckbuilding d (UI.Filters.update subMsg oldFilters) p n, Cmd.none )
+
+                ( Deckbuilding oldDeck f p n, ChangedDecklist ( card, qty ) ) ->
+                    let
+                        replace items ( props, q ) =
+                            let
+                                preList =
+                                    List.filter (Tuple.first >> (.id >> (/=) props.id)) items
+                            in
+                            if qty == 0 then
+                                preList
+
+                            else
+                                ( props, q ) :: preList
+
+                        oldCards =
+                            oldDeck.cards
+
+                        newCards =
+                            case card of
+                                Card.RoleType (Card.Role props) ->
+                                    { oldCards | role = Just props }
+
+                                Card.StrongholdType (Card.Stronghold props) ->
+                                    { oldCards | stronghold = props }
+
+                                Card.ProvinceType (Card.Province props) ->
+                                    { oldCards
+                                        | provinces =
+                                            if qty == 0 then
+                                                List.filter (.id >> (==) props.id) oldCards.provinces
+
+                                            else
+                                                props :: List.filter (.id >> (==) props.id) oldCards.provinces
                                     }
-                                    d
-                                )
-                            )
-                        |> Maybe.withDefault ( model, Cmd.none )
+
+                                Card.AttachmentType (Card.Attachment props) ->
+                                    { oldCards | attachments = replace oldCards.attachments ( props, qty ) }
+
+                                Card.CharacterType (Card.ConflictCharacter props) ->
+                                    { oldCards | conflictCharacters = replace oldCards.conflictCharacters ( props, qty ) }
+
+                                Card.CharacterType (Card.DynastyCharacter props) ->
+                                    { oldCards | dynastyCharacters = replace oldCards.dynastyCharacters ( props, qty ) }
+
+                                Card.EventType (Card.ConflictEvent props) ->
+                                    { oldCards | conflictEvents = replace oldCards.conflictEvents ( props, qty ) }
+
+                                Card.EventType (Card.DynastyEvent props) ->
+                                    { oldCards | dynastyEvents = replace oldCards.dynastyEvents ( props, qty ) }
+
+                                Card.HoldingType (Card.Holding props) ->
+                                    { oldCards | holdings = replace oldCards.holdings ( props, qty ) }
+                    in
+                    ( Deckbuilding { oldDeck | cards = newCards } f p n, Cmd.none )
+
+                ( Deckbuilding dc fs ProvinceSelectorIsClosed ne, ProvinceSelectorToggle ) ->
+                    ( Deckbuilding dc fs (ProvinceSelectorIsOpen Element.Air) ne, Cmd.none )
+
+                ( Deckbuilding dc fs (ProvinceSelectorIsOpen _) ne, ProvinceSelectorChangeElement newElement ) ->
+                    ( Deckbuilding dc fs (ProvinceSelectorIsOpen newElement) ne, Cmd.none )
+
+                ( Deckbuilding dc fs (ProvinceSelectorIsOpen _) ne, ProvinceSelectorToggle ) ->
+                    ( Deckbuilding dc fs ProvinceSelectorIsClosed ne, Cmd.none )
+
+                ( Deckbuilding dc fs ps ne, ToggleProvince province ) ->
+                    let
+                        oldCards =
+                            dc.cards
+
+                        newCards =
+                            { oldCards
+                                | provinces =
+                                    if List.member province oldCards.provinces then
+                                        List.filter (.id >> (/=) province.id) oldCards.provinces
+
+                                    else
+                                        province :: oldCards.provinces
+                            }
+                    in
+                    ( Deckbuilding { dc | cards = newCards } fs ps ne, Cmd.none )
+
+                ( Deckbuilding dc _ _ _, Save ) ->
+                    ( model, API.DB.saveDeck SavedDocument cards dc )
 
                 ( _, SavedDocument result ) ->
                     case result of
                         Err j ->
-                            Debug.log (Debug.toString j)
+                            Debug.log "ERROR"
+                                Debug.log
+                                (Debug.toString j)
                                 ( model, Cmd.none )
 
-                        Ok doc ->
-                            Debug.log (Debug.toString doc.fields)
-                                ( model, Cmd.none )
-
-                ( _, GotDocument result ) ->
-                    case result of
-                        Err _ ->
-                            ( model, Cmd.none )
-
-                        Ok doc ->
-                            Debug.log (Debug.toString doc.fields)
+                        Ok deck ->
+                            Debug.log "SUCCESS"
+                                Debug.log
+                                (Debug.toString deck)
                                 ( model, Cmd.none )
 
                 ( _, _ ) ->
@@ -255,38 +252,44 @@ view shared route model =
                 ( Shared.Loaded { cards }, ChoosingStronghold _ ) ->
                     [ List.filterMap toStronghold (Dict.values cards) |> viewStrongholdSelector ]
 
-                ( Shared.Loaded { cards }, Deckbuilding deckCards filters ps ) ->
-                    case intoDeck cards deckCards of
-                        Nothing ->
-                            [ UI.Error.view ]
-
-                        Just deck ->
-                            [ header [ class "deckbuilder-header" ]
-                                [ button [ onClick Save ]
-                                    [ text "save"
-                                    ]
-                                ]
-                            , main_ [ class "deckbuilder-decklist" ]
-                                [ decklistModel deckCards deck |> UI.Decklist.view decklistActions
-                                ]
-                            , aside [ class "deckbuilder-builder" ]
-                                (List.concat
-                                    [ case ps of
-                                        ProvinceSelectorIsOpen displayEl ->
-                                            [ provinceSelector cards deck displayEl ]
-
-                                        _ ->
-                                            []
-                                    , [ viewFilters filters ]
-                                    , [ viewCardsOptions cards deckCards filters ]
-                                    ]
-                                )
+                ( Shared.Loaded { cards, user }, Deckbuilding deck filters ps ne ) ->
+                    [ header [ class "deckbuilder-header" ]
+                        [ button [ onClick Save ]
+                            [ text "save"
                             ]
+                        ]
+                    , main_ [ class "deckbuilder-decklist" ]
+                        [ UI.Decklist.view decklistActions
+                            { name = deck.meta.name
+                            , editingName =
+                                case ne of
+                                    NameEditing _ ->
+                                        True
+
+                                    _ ->
+                                        False
+                            , author = user
+                            , deck = deck.cards
+                            }
+                        ]
+                    , aside [ class "deckbuilder-builder" ]
+                        (List.concat
+                            [ case ps of
+                                ProvinceSelectorIsOpen displayEl ->
+                                    [ provinceSelector cards deck.cards displayEl ]
+
+                                _ ->
+                                    []
+                            , [ viewFilters filters ]
+                            , [ viewCardsOptions cards deck.cards filters ]
+                            ]
+                        )
+                    ]
     in
     UI.Page.view route viewsForStep
 
 
-provinceSelector : CardCollection -> Deck.Deck -> Element.Element -> Html Msg
+provinceSelector : CardCollection -> Deck.DeckCards -> Element.Element -> Html Msg
 provinceSelector =
     let
         viewProvinceSelector collection deck displayEl =
@@ -325,7 +328,7 @@ provinceSelector =
     Lazy.lazy3 viewProvinceSelector
 
 
-viewProvinceLine : Deck.Deck -> Element.Element -> Card.Card -> Maybe (Html Msg)
+viewProvinceLine : Deck.DeckCards -> Element.Element -> Card.Card -> Maybe (Html Msg)
 viewProvinceLine deck displayEl card =
     Just card
         |> Maybe.andThen
@@ -386,30 +389,6 @@ decklistActions =
         }
 
 
-decklistModel : DeckCards -> Deck.Deck -> UI.Decklist.Model
-decklistModel deckCards deck =
-    { name =
-        case deckCards.name of
-            Named name ->
-                Just name
-
-            EditingName name _ ->
-                Just name
-
-            _ ->
-                Nothing
-    , author = "dude"
-    , deck = deck
-    , editingName =
-        case deckCards.name of
-            EditingName _ _ ->
-                True
-
-            _ ->
-                False
-    }
-
-
 viewStrongholdSelector : List Card.StrongholdProps -> Html Msg
 viewStrongholdSelector strongholds =
     div [ class "strongholdpicker" ]
@@ -429,18 +408,6 @@ viewStrongholdSelector strongholds =
         ]
 
 
-intoDeck : CardCollection -> DeckCards -> Maybe Deck.Deck
-intoDeck cards deckCards =
-    [ Dict.toList deckCards.otherCards
-    , [ ( deckCards.stronghold.id, 1 ) ]
-    , Maybe.map (\role -> [ ( role.id, 1 ) ]) deckCards.role
-        |> Maybe.withDefault []
-    ]
-        |> List.concat
-        |> List.filter (\( cardId, _ ) -> Dict.member cardId cards)
-        |> Deck.fromDecklist cards
-
-
 viewFilters : UI.Filters.Model -> Html Msg
 viewFilters filters =
     div [ class "filters" ]
@@ -449,7 +416,7 @@ viewFilters filters =
         ]
 
 
-viewCardsOptions : Dict.Dict String Card.Card -> DeckCards -> UI.Filters.Model -> Html Msg
+viewCardsOptions : Dict.Dict String Card.Card -> Deck.DeckCards -> UI.Filters.Model -> Html Msg
 viewCardsOptions cards deck filters =
     div [ class "cards" ]
         [ table [ class "cardlist" ]
@@ -477,15 +444,16 @@ cardListHeader =
         ]
 
 
-cardListBody : Dict.Dict String Card.Card -> UI.Filters.Model -> DeckCards -> Html Msg
+cardListBody : Dict.Dict String Card.Card -> UI.Filters.Model -> Deck.DeckCards -> Html Msg
 cardListBody =
     let
+        viewcardListBody : Dict.Dict String Card.Card -> UI.Filters.Model -> Deck.DeckCards -> Html Msg
         viewcardListBody cards filters deck =
             let
                 cardRowx card =
                     let
                         copiesInDeck =
-                            Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
+                            Deck.copiesOf deck <| Card.id card
                     in
                     cardRow deck.stronghold.clan card (cardQuantitySelector card copiesInDeck)
             in
@@ -616,11 +584,24 @@ cardQuantitySelector =
     Lazy.lazy2 viewCardQuantitySelector
 
 
-compositeSort : DeckCards -> Card.Card -> Card.Card -> Order
+compositeSort : Deck.DeckCards -> Card.Card -> Card.Card -> Order
 compositeSort deck a b =
     let
+        xyz =
+            List.concat
+                [ List.map (Tuple.mapFirst .id) deck.attachments
+                , List.map (Tuple.mapFirst .id) deck.holdings
+                , List.map (Tuple.mapFirst .id) deck.dynastyCharacters
+                , List.map (Tuple.mapFirst .id) deck.conflictCharacters
+                , List.map (Tuple.mapFirst .id) deck.dynastyEvents
+                , List.map (Tuple.mapFirst .id) deck.conflictEvents
+                ]
+
         selected card =
-            Maybe.withDefault 0 <| Dict.get (Card.id card) deck.otherCards
+            List.filter (Tuple.first >> (==) (Card.id card)) xyz
+                |> List.head
+                |> Maybe.map Tuple.second
+                |> Maybe.withDefault 0
     in
     case compare (selected a) (selected b) of
         GT ->

@@ -1,4 +1,4 @@
-module Clan exposing (Clan(..), comparable, toString)
+module Clan exposing (Clan(..), comparable, fromString, toString)
 
 
 type Clan
@@ -73,3 +73,37 @@ toString clan =
 
         Shadowlands ->
             "shadowlands"
+
+
+fromString : String -> Maybe Clan
+fromString str =
+    case str of
+        "crab" ->
+            Just Crab
+
+        "crane" ->
+            Just Crane
+
+        "dragon" ->
+            Just Dragon
+
+        "lion" ->
+            Just Lion
+
+        "phoenix" ->
+            Just Phoenix
+
+        "scorpion" ->
+            Just Scorpion
+
+        "unicorn" ->
+            Just Unicorn
+
+        "neutral" ->
+            Just Neutral
+
+        "shadowlands" ->
+            Just Shadowlands
+
+        _ ->
+            Nothing

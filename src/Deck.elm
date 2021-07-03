@@ -1,7 +1,9 @@
-module Deck exposing (Deck, Decklist, fromDecklist, maxInfluence, toDecklist)
+module Deck exposing (Deck, DeckCards, Decklist, Meta, copiesOf, fromDecklist, initDeckCards, initMeta, maxInfluence, toDecklist)
 
 import Card
+import Clan exposing (Clan)
 import Dict
+import Format exposing (Format)
 import Shared exposing (CardCollection)
 
 
@@ -10,6 +12,33 @@ type alias Decklist =
 
 
 type alias Deck =
+    { meta : Meta
+    , cards : DeckCards
+    }
+
+
+type alias Meta =
+    { id : Maybe String
+    , authorId : String
+    , format : Format
+    , clan : Clan
+    , name : Maybe String
+    , description : Maybe String
+    }
+
+
+initMeta : String -> Clan -> Meta
+initMeta authorId clan =
+    { id = Nothing
+    , authorId = authorId
+    , format = Format.default
+    , clan = clan
+    , name = Nothing
+    , description = Nothing
+    }
+
+
+type alias DeckCards =
     { stronghold : Card.StrongholdProps
     , role : Maybe Card.RoleProps
     , provinces : List Card.ProvinceProps
@@ -22,7 +51,40 @@ type alias Deck =
     }
 
 
-toDecklist : Deck -> Decklist
+initDeckCards : Card.StrongholdProps -> DeckCards
+initDeckCards stronghold =
+    { stronghold = stronghold
+    , role = Nothing
+    , provinces = []
+    , attachments = []
+    , holdings = []
+    , dynastyCharacters = []
+    , conflictCharacters = []
+    , dynastyEvents = []
+    , conflictEvents = []
+    }
+
+
+copiesOf : DeckCards -> String -> Int
+copiesOf deckcards cardId =
+    List.concat
+        [ [ ( deckcards.stronghold.id, 1 ) ]
+        , Maybe.map (\r -> [ ( r.id, 1 ) ]) deckcards.role |> Maybe.withDefault []
+        , List.map (\p -> ( p.id, 1 )) deckcards.provinces
+        , List.map (Tuple.mapFirst .id) deckcards.attachments
+        , List.map (Tuple.mapFirst .id) deckcards.holdings
+        , List.map (Tuple.mapFirst .id) deckcards.dynastyCharacters
+        , List.map (Tuple.mapFirst .id) deckcards.conflictCharacters
+        , List.map (Tuple.mapFirst .id) deckcards.dynastyEvents
+        , List.map (Tuple.mapFirst .id) deckcards.conflictEvents
+        ]
+        |> List.filter (Tuple.first >> (==) cardId)
+        |> List.head
+        |> Maybe.map Tuple.second
+        |> Maybe.withDefault 0
+
+
+toDecklist : DeckCards -> Decklist
 toDecklist deck =
     List.concat
         [ [ ( deck.stronghold.id, 1 ) ]
@@ -37,7 +99,7 @@ toDecklist deck =
         ]
 
 
-fromDecklist : CardCollection -> Decklist -> Maybe Deck
+fromDecklist : CardCollection -> Decklist -> Maybe DeckCards
 fromDecklist collection decklist =
     let
         deckCards =
@@ -166,7 +228,7 @@ intoCategories ( card, n ) cats =
 --------------
 
 
-maxInfluence : Deck -> Int
+maxInfluence : DeckCards -> Int
 maxInfluence { role, stronghold } =
     case role of
         Just { traits } ->
